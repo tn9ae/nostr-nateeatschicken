@@ -1,7 +1,7 @@
 [info]
 relay_url = "wss://nostr.nateeatschicken.xyz/"
 name = "NateeatsChicken Relay"
-description = "Open mode: free tier with basic anti-spam limits."
+description = "Lockdown mode: verified nostr.nateeatschicken.xyz users and supporters only."
 
 [network]
 address = "0.0.0.0"
@@ -16,8 +16,8 @@ subscriptions_per_min = 60
 max_event_bytes = 65536
 
 [verified_users]
-mode = "passive"
+mode = "enabled"
 domain_whitelist = ["nostr.nateeatschicken.xyz"]
 
 [authorization]
-pubkey_whitelist = []
+pubkey_whitelist = [] # populated by relay_lockdown.sh from supporters.txt

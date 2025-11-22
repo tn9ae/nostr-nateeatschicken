@@ -3,8 +3,7 @@ README.md
 
 This project runs on **Contabo** and powers:
 
-- A **NIP-05 handle service** on  
-  `name@nostr.nateeatschicken.xyz`
+- A **NIP-05 handle service** on `name@nostr.nateeatschicken.xyz`
 - A **Nostr relay** (`wss://nostr.nateeatschicken.xyz`) with:
   - Free tier for everyone
   - Planned “power user” tier with better guarantees
@@ -13,281 +12,114 @@ This project runs on **Contabo** and powers:
   - Optional relay “power user” upgrades
   - Optional notifications (e.g. Nostr DM, logs)
 
-The main idea: users can support `nateeatschicken` and get:
+The main idea: supporters of `nateeatschicken` get:
 
-- A verified Nostr handle on the `nostr.nateeatschicken.xyz` domain  
-- Preferential access to the relay if spam/abuse means the relay has to tighten rules
+- A verified Nostr handle on the `nostr.nateeatschicken.xyz` domain
+- Preferential access to the relay if spam/abuse requires tighter rules
 
 ---
 
 ## 2. Domains & URLs
 
-- **Frontend / Dev UI (Codex, etc.):**  
-  `https://dev.nostr.nateeatschicken.xyz`  
-- **Production Nostr subdomain:**  
-  `https://nostr.nateeatschicken.xyz`
-- **NIP-05 endpoint (Nostr identity lookup):**  
-  `https://nostr.nateeatschicken.xyz/.well-known/nostr.json`
-- **Relay URL:**  
-  `wss://nostr.nateeatschicken.xyz`
+- **Frontend / Dev UI (Codex, etc.):** `https://dev.nostr.nateeatschicken.xyz`
+- **Production Nostr subdomain:** `https://nostr.nateeatschicken.xyz`
+- **NIP-05 endpoint (Nostr identity lookup):** `https://nostr.nateeatschicken.xyz/.well-known/nostr.json`
+- **Relay URL:** `wss://nostr.nateeatschicken.xyz`
 
 ---
 
 ## 3. Current components (implemented)
 
-### 3.1 Web server / reverse proxy
+### 3.1 Repo layout (actual paths)
 
-- Frontend is handled by **Caddy running in Docker**.
-- The Caddy container typically:
-  - Serves static files from a host directory mapped to `/srv`
-  - Reverse proxies to the Nostr relay container and any webhook apps
+- Relay active config: `relay/config.toml` (copied from the mode-specific configs)
+- Relay config variants: `relay/config-open.toml`, `relay/config-locked.toml`
+- Relay data dir: `relay/db/` (`nostr.db`, `nostr.db-shm`, `nostr.db-wal`)
+- Supporter list: `relay/supporters.txt`
+- Helper scripts: `relay/relay_open.sh`, `relay/relay_lockdown.sh`
+- NIP-05 file: `site/.well-known/nostr.json`
+- Caddy/Docker definitions: not tracked in this repo (expected to exist on the host)
 
-Assumptions for Codex (verify via `docker-compose.yml` or container inspect):
+### 3.2 Web server / reverse proxy
 
-- Web root (host): `/opt/nostr/site`
-- Caddyfile (host): `/opt/nostr/Caddyfile`
-- Caddy container: `nostr_caddy_1` (or similar)
+- Caddy runs in Docker, serves static files, and reverse proxies to the relay container.
+- Caddyfile/container name are not in this repo; map the host volume for the web root to `site/` and proxy to the relay container port.
 
-### 3.2 NIP-05 – `nostr.json`
+### 3.3 NIP-05 – `nostr.json`
 
-NIP-05 is how a human-readable handle (like `nate@nostr.nateeatschicken.xyz`) is mapped to a Nostr pubkey.
+NIP-05 maps a handle (like `nate@nostr.nateeatschicken.xyz`) to a Nostr pubkey.
 
-Implementation so far:
+- File: `site/.well-known/nostr.json`
+- Example content:
 
-- Web root has:
-
-  ```text
-  /opt/nostr/site/.well-known/nostr.json
-Example content:
-
-{
-  "names": {
-    "nate": "b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d"
+  ```json
+  {
+    "names": {
+      "nate": "b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d"
+    }
   }
-}
+  ```
 
-This maps:
+- Helper script to edit this file (e.g., `manage_nip05.py`) is not yet present; when editing manually, write atomically.
 
-nate@nostr.nateeatschicken.xyz → Nate’s hex pubkey
+### 3.4 Nostr relay (nostr-rs-relay)
 
-npub (for reference):
-npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2
+- Active config: `relay/config.toml`
+- Relay URL: `wss://nostr.nateeatschicken.xyz/`
+- Defaults: `[verified_users]` mode = `passive`, domain whitelist includes `nostr.nateeatschicken.xyz`
+- Limits (active config and open config): `messages_per_sec = 10`, `subscriptions_per_min = 60`, `max_event_bytes = 65536`
+- Data files: `relay/db/nostr.db*`
+- Container name is not documented here; scripts leave restart to the operator.
 
-There is or will be a helper script to update this file:
+---
 
-Host path: /opt/nostr/manage_nip05.py
+## 4. Relay: free vs power-user + spam/security (Step 4 implemented)
 
-It should:
+- `relay/config-open.toml`: open tier; `verified_users.mode = "passive"` with the rate limits above.
+- `relay/config-locked.toml`: lockdown; `verified_users.mode = "enabled"`, `domain_whitelist = ["nostr.nateeatschicken.xyz"]`, and a `pubkey_whitelist` placeholder that can be populated from `supporters.txt`.
+- `relay/supporters.txt`: one hex pubkey per line; lines starting with `#` are comments and are ignored. Used to build the whitelist in lockdown mode.
+- `relay/relay_open.sh`: copies `config-open.toml` over `config.toml`. Does not restart Docker.
+- `relay/relay_lockdown.sh`: rebuilds `pubkey_whitelist` from `supporters.txt`, then copies the locked config over `config.toml`. Does not restart Docker.
 
-Load the JSON
+Usage (run from repo root or inside `relay/`):
 
-Insert/update a names[handle] = hex_pubkey
+```bash
+./relay/relay_open.sh
+./relay/relay_lockdown.sh
+# then restart the relay container on the host, e.g.:
+# docker restart <relay-container-name>
+```
 
-Write the file safely (temp file + atomic replace)
+`relay/config.toml` is the live config consumed by the relay container (copy or symlink it into place as needed on the host).
 
-Codex should treat this script as the source of truth for modifying nostr.json.
+---
 
-3.3 Nostr relay (nostr-rs-relay)
+## 5. Ko-fi + automation (future)
 
-The relay is expected to be nostr-rs-relay inside Docker.
+- Small Flask (or similar) app exposed at `/kofi-webhook` via Caddy.
+- Log all payment events.
+- For products like “NIP-05 handle” or “Relay power user”:
+  - Parse buyer’s requested handle + npub.
+  - Convert npub → hex pubkey.
+  - Update `site/.well-known/nostr.json` (via a helper script) with `names[handle] = hex`.
+  - Append the hex pubkey to `relay/supporters.txt`.
+  - Optionally trigger a relay reload if needed.
+- Future: optional Nostr DM notification to Nate’s npub when provisioning succeeds.
 
-Assumptions for Codex (verify):
+---
 
-Relay container: nostr_relay (or similar)
+## 6. Security & anti-spam expectations
 
-Host config: /opt/nostr/relay/config.toml
+- Rate limiting enabled: `messages_per_sec`, `subscriptions_per_min`, `max_event_bytes` (~64KB).
+- `relay_url` and `domain_whitelist` use `nostr.nateeatschicken.xyz`.
+- NIP-05 enforcement is only enabled in lockdown mode.
+- Helper scripts fail fast (`set -euo pipefail`) and are safe to re-run.
+- Future ideas: Fail2ban watching reverse proxy logs; event kind allowlists/blacklists if spam patterns emerge.
 
-Host data dir: /opt/nostr/relay/data
+---
 
-Base config needs to include:
+## 7. What Codex should do first
 
-[info] relay_url = "wss://nostr.nateeatschicken.xyz/"
-
-Sane [limits]:
-
-messages_per_sec
-
-subscriptions_per_min
-
-max_event_bytes etc.
-
-[verified_users] configured with:
-
-Initially mode = "passive" (check NIP-05 but do not block)
-
-[pay_to_relay] currently disabled.
-
-A supporter list file is planned:
-
-/opt/nostr/relay/supporters.txt
-
-Format: one hex pubkey per line, comments allowed with #.
-
-4. Planned but NOT implemented yet (important for Codex)
-4.1 Relay: free vs power-user + spam/security (Step 4)
-
-This is the main missing piece.
-
-Desired behaviour:
-
-Normal (open) mode:
-
-Anyone can publish to the relay (within rate limits).
-
-NIP-05 is checked but not enforced.
-
-Supports a free tier and makes discovery easy.
-
-Lockdown (spam wave / abuse) mode:
-
-Only users with valid name@nostr.nateeatschicken.xyz NIP-05 (and possibly a whitelist) get full persistence.
-
-Other events can be rejected or not stored.
-
-Power users / supporters should keep working without friction.
-
-Expected implementation:
-
-Two config variants on host:
-
-/opt/nostr/relay/config-open.toml
-
-/opt/nostr/relay/config-locked.toml
-
-A “live” config:
-
-/opt/nostr/relay/config.toml (symlink or copy of one of the above)
-
-Two helper scripts:
-
-/opt/nostr/relay/relay_open.sh
-
-/opt/nostr/relay/relay_lockdown.sh
-
-These scripts should:
-
-Copy the appropriate TOML into config.toml.
-
-Restart the relay container (e.g. docker restart nostr_relay).
-
-config-open.toml expectations:
-
-[verified_users] mode = "passive"
-
-Reasonable but not extreme rate limits.
-
-config-locked.toml expectations:
-
-[verified_users] mode = "enabled"
-
-domain_whitelist = ["nostr.nateeatschicken.xyz"]
-
-Optional pubkey_whitelist using values from supporters.txt.
-
-Possibly slightly tighter rate limits to reduce abuse.
-
-Codex’s job here: create these configs + scripts, making sure they match the actual container names and paths in the repo.
-
-4.2 Ko-fi + automation
-
-Longer-term goals:
-
-A small Flask or similar app on host:
-
-Receives Ko-fi webhooks at /kofi-webhook via Caddy reverse proxy.
-
-Logs all payment events.
-
-For specific products (“NIP-05 handle”, “Relay power user”):
-
-Parses buyer’s requested handle + npub.
-
-Converts npub → hex pubkey.
-
-Calls manage_nip05.py handle hex_pubkey.
-
-Appends hex pubkey to /opt/nostr/relay/supporters.txt.
-
-Optionally triggers a relay reload if needed.
-
-Later: optional Nostr DM notification to Nate’s npub when provisioning succeeds.
-
-The Ko-fi automation is not required yet for basic functionality, but Codex should be aware of this future integration so it keeps paths and structure clean.
-
-5. Security & anti-spam expectations
-
-Codex should ensure:
-
-Rate limiting is enabled:
-
-messages_per_sec
-
-subscriptions_per_min
-
-max_event_bytes not too large (e.g. 64KB).
-
-Relay is not logging or exposing sensitive keys (only pubkeys).
-
-NIP-05 enforcement (config-locked) is correctly wired to the nostr.nateeatschicken.xyz domain.
-
-Helper scripts fail fast / exit on errors.
-
-It’s safe to run scripts multiple times.
-
-Future optional ideas (not required yet):
-
-Fail2ban or similar watching reverse proxy logs.
-
-Event kind allowlists/blacklists if a specific spam pattern emerges.
-
-6. What Codex should do first
-
-Given this README, Codex should:
-
-Verify assumptions:
-
-Confirm file paths for:
-
-Caddyfile
-
-Web root
-
-Relay config.toml
-
-Any existing scripts in /opt/nostr or equivalent.
-
-Update this README if paths are different.
-
-Implement Step 4 (relay open/lockdown):
-
-Add config-open.toml and config-locked.toml under /opt/nostr/relay/ (or repo equivalents).
-
-Add relay_open.sh and relay_lockdown.sh.
-
-Make sure they use the correct Docker container name.
-
-Ensure they are executable and robust.
-
-Wire everything into version control:
-
-Make sure all relevant files are under Git:
-
-README.md
-
-Caddyfile (or config)
-
-Relay configs
-
-Helper scripts
-
-Ko-fi webhook skeleton (if present)
-
-Prepare for automation:
-
-If a Ko-fi webhook app exists in the repo:
-
-Document its structure and endpoints.
-
-Add TODO blocks for npub → hex conversion and handle parsing.
-
-Codex should treat this README as the single source of context for the Nostr stack and keep it updated as changes are made.
+- Verify host Caddy/Caddyfile paths and container names; align with the repo-relative paths above.
+- Use `relay_open.sh` / `relay_lockdown.sh` to switch modes, then restart the relay container manually on the host.
+- Keep this README updated as paths or configs change; ensure future automation reuses `relay/supporters.txt` and `site/.well-known/nostr.json`.
