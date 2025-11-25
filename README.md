@@ -149,3 +149,19 @@ Usage (run from repo root or inside `relay/`):
 - Verify host Caddy/Caddyfile paths and container names; align with the repo-relative paths above.
 - Use `relay_open.sh` / `relay_lockdown.sh` to switch modes, then restart the relay container manually on the host.
 - Keep this README updated as paths or configs change; ensure future automation reuses `relay/supporters.txt` and `site/.well-known/nostr.json`.
+
+## 8. Ko-fi webhook skeleton
+
+- Placeholder app lives at `kofi-webhook/app.py`.
+- Run locally:
+
+  ```bash
+  cd kofi-webhook
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  python3 app.py
+  ```
+
+- Current behaviour: listens on `0.0.0.0:5000`, checks `X-Ko-Fi-Token` against `KOFI_WEBHOOK_TOKEN` (if set), logs payloads, and returns `ok`.
+- Future behaviour: parse Ko-fi payloads for specific products/tier names, call `manage_nip05.py` to add handles, and call `manage_supporters.py add <pubkey>` to whitelist paying users.
