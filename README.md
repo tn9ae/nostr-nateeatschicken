@@ -75,6 +75,19 @@ NIP-05 maps a handle (like `nate@nostr.nateeatschicken.xyz`) to a Nostr pubkey.
 
 - Full NIP-05 identifier format: `handle@nostr.nateeatschicken.xyz` (use the handle from the script with the fixed domain).
 
+### Managing relay supporters
+
+- File: `relay/supporters.txt` (used to populate the whitelist in lockdown mode).
+- Example commands (run from the repo root):
+
+  ```bash
+  python3 manage_supporters.py add b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d
+  python3 manage_supporters.py remove b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d
+  python3 manage_supporters.py list
+  ```
+
+- After changing supporters, run `./deploy.sh` on the server to push the updates live.
+
 ### 3.4 Nostr relay (nostr-rs-relay)
 
 - Active config: `relay/config.toml`
