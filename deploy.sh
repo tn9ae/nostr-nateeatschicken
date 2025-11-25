@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_DIR="$HOME/nostr-project"
 LIVE_RELAY_DIR="/opt/nostr/relay"
-CONTAINER_NAME="nostr_relay" # Change this to the real name from `docker ps`.
+CONTAINER_NAME="nostr_relay" # Change this to the real name from `docker ps` on the server.
 
 echo "Fetching latest code from origin/main..."
 cd "$REPO_DIR"
@@ -23,7 +23,7 @@ sudo cp "$REPO_DIR/relay/config.toml" \
         "$REPO_DIR/relay/supporters.txt" \
         "$LIVE_RELAY_DIR/"
 
-echo "Setting execute permissions on relay scripts..."
+echo "Ensuring relay scripts are executable..."
 sudo chmod +x "$LIVE_RELAY_DIR/relay_open.sh" "$LIVE_RELAY_DIR/relay_lockdown.sh"
 
 echo "Restarting relay container..."
