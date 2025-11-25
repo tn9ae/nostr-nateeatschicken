@@ -1,7 +1,11 @@
 [info]
 relay_url = "wss://relay.nateeatschicken.xyz/"
-name = "NateeatsChicken Relay"
-description = "Open mode: free tier with basic anti-spam limits."
+name = "NateEatsChicken Relay"
+description = "Friendly relay for NateEatsChicken + power users. Light anti-spam, paid handles, and relay access."
+pubkey = "b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d"
+contact = "npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2"
+software = "nostr-rs-relay"
+supported_nips = [1, 2, 9, 11, 15, 16, 20, 33, 40]
 
 [network]
 address = "0.0.0.0"
