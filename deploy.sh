@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_DIR="$HOME/nostr-project"
 LIVE_RELAY_DIR="/opt/nostr/relay"
-CONTAINER_NAME="nostr_relay" # Change this to the real name from `docker ps` on the server.
+CONTAINER_NAME="nostr-relay-1"
 
 echo "=== Deploy started at $(date) ==="
 
