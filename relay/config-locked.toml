@@ -1,5 +1,5 @@
 [info]
-relay_url = "wss://relay.nostr.nateeatschicken.xyz/"
+relay_url = "wss://relay.nateeatschicken.xyz/"
 name = "NateeatsChicken Relay"
 description = "Lockdown mode: verified nostr.nateeatschicken.xyz users and supporters only."
 
@@ -17,7 +17,7 @@ max_event_bytes = 65536
 
 [verified_users]
 mode = "enabled"
-domain_whitelist = ["relay.nostr.nateeatschicken.xyz"]
+domain_whitelist = ["relay.nateeatschicken.xyz"]
 
 [authorization]
 pubkey_whitelist = [] # populated by relay_lockdown.sh from supporters.txt

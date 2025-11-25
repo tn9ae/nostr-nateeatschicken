@@ -1,5 +1,5 @@
 [info]
-relay_url = "wss://relay.nostr.nateeatschicken.xyz/"
+relay_url = "wss://relay.nateeatschicken.xyz/"
 name = "NateeatsChicken Relay"
 description = "Open mode: free tier with basic anti-spam limits."
 
@@ -17,7 +17,7 @@ max_event_bytes = 65536
 
 [verified_users]
 mode = "passive"
-domain_whitelist = ["relay.nostr.nateeatschicken.xyz"]
+domain_whitelist = ["relay.nateeatschicken.xyz"]
 
 [authorization]
 pubkey_whitelist = []
