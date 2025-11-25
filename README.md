@@ -62,6 +62,19 @@ NIP-05 maps a handle (like `nate@nostr.nateeatschicken.xyz`) to a Nostr pubkey.
 
 - Helper script to edit this file (e.g., `manage_nip05.py`) is not yet present; when editing manually, write atomically.
 
+### Managing NIP-05 handles
+
+- File location: `site/.well-known/nostr.json`
+- Example commands (run from the repo root):
+
+  ```bash
+  python3 manage_nip05.py add nate b12b6d90b7ba7b6d4432b272b10a4983d22ebdae5defd9aacfe54d158a0fdd0d
+  python3 manage_nip05.py remove nate
+  python3 manage_nip05.py list
+  ```
+
+- Full NIP-05 identifier format: `handle@nostr.nateeatschicken.xyz` (use the handle from the script with the fixed domain).
+
 ### 3.4 Nostr relay (nostr-rs-relay)
 
 - Active config: `relay/config.toml`
