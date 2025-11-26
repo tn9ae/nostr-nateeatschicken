@@ -9,12 +9,15 @@ nostr.nateeatschicken.xyz {
         reverse_proxy 127.0.0.1:5000
     }
 
-    file_server
+    handle {
+        handle_path /.well-known/* {
+            root * /srv/.well-known
+            file_server
+        }
 
-    handle_path /.well-known/* {
-        root * /srv/.well-known
         file_server
     }
+
 }
 
 relay.nateeatschicken.xyz {
