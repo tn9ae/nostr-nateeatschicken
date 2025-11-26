@@ -163,5 +163,17 @@ Usage (run from repo root or inside `relay/`):
   python3 app.py
   ```
 
-- Current behaviour: listens on `0.0.0.0:5000`, checks `X-Ko-Fi-Token` against `KOFI_WEBHOOK_TOKEN` (if set), logs payloads, and returns `ok`.
+- Current behaviour: listens on `127.0.0.1:5000`, checks `verification_token` in the payload against `KOFI_VERIFICATION_TOKEN` (if set), logs a summary (full payload at debug), and returns `ok`.
 - Future behaviour: parse Ko-fi payloads for specific products/tier names, call `manage_nip05.py` to add handles, and call `manage_supporters.py add <pubkey>` to whitelist paying users.
+
+## 9. Secrets and tokens
+
+- GitHub:
+  - PATs must never be committed to the repo.
+  - The server clone at `~/nostr-project` should have a clean remote like `https://github.com/tn9ae/nostr-nateeatschicken.git`.
+  - Any PAT used for pushing from Codex lives only in the Codex container `.git/config`, not in tracked files or on the server.
+- Ko-fi:
+  - Set `KOFI_VERIFICATION_TOKEN` as an environment variable when running `kofi-webhook/app.py`.
+  - Never hard-code the token in Python files or commit it to the repo.
+
+If a token is ever accidentally shared or committed, revoke it in GitHub/Ko-fi and replace it immediately.
