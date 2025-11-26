@@ -1,0 +1,30 @@
+nostr.nateeatschicken.xyz {
+    root * /srv
+
+    @kofi_webhook {
+        path /kofi-webhook
+    }
+
+    handle @kofi_webhook {
+        reverse_proxy 127.0.0.1:5000
+    }
+
+    file_server
+
+    handle_path /.well-known/* {
+        root * /srv/.well-known
+        file_server
+    }
+}
+
+relay.nateeatschicken.xyz {
+    reverse_proxy relay:8080
+}
+
+dev.nostr.nateeatschicken.xyz {
+    basic_auth {
+        nate $2a$14$zIrdd/lExo0C41y4hWHireOa/XUCSJd6NEDE02b8GoLB1g.QErYpa
+    }
+
+    reverse_proxy openvscode-server:3000
+}
