@@ -1,88 +1,45 @@
-import os
 import json
 import logging
 from pathlib import Path
 
 from flask import Flask, request
 
-LOG_PATH = Path(__file__).with_name("kofi_events.log")
-
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
+LOG_PATH = Path(__file__).with_name("kofi_events.log")
+
 
 @app.route("/kofi-webhook", methods=["POST"])
 def kofi_webhook():
-    expected_token = os.environ.get("KOFI_VERIFICATION_TOKEN")
+    # Capture as much info as possible about the incoming request
+    json_body = request.get_json(silent=True)
+    form_data = request.form.to_dict(flat=False)
+    raw_body = request.get_data(as_text=True)
+    headers = {k: v for k, v in request.headers.items()}
 
-    data_json = None
-    incoming_token = None
+    payload = {
+        "remote_addr": request.remote_addr,
+        "method": request.method,
+        "path": request.path,
+        "content_type": request.content_type,
+        "headers": headers,
+        "form": form_data,
+        "json": json_body,
+        "raw_body": raw_body,
+    }
 
-    # Try JSON body first (for my own curl tests)
-    if request.is_json:
-        data_json = request.get_json(silent=True) or {}
-        incoming_token = data_json.get("verification_token")
+    logging.info("Ko-fi webhook received: content_type=%s", request.content_type)
 
-    # Ko-fi may send the token in form fields
-    if incoming_token is None:
-        incoming_token = request.form.get("verification_token")
-
-    # Ko-fi also supports X-Ko-Fi-Verification-Token header
-    if incoming_token is None:
-        incoming_token = request.headers.get("X-Ko-Fi-Verification-Token")
-
-    # Token check
-    if expected_token and incoming_token != expected_token:
-        logging.warning("Invalid Ko-fi verification token: got %r", incoming_token)
-        # NOTE: Do NOT return here; we still want to log the payload for debugging
-        # and return 200 so Ko-fi does not keep retrying.
-
-    # Build payload
-    payload = None
-
-    # Use JSON if we already parsed it
-    if data_json is not None:
-        payload = data_json
-    elif request.is_json:
-        payload = request.get_json(silent=True)
-    else:
-        # Ko-fi real webhooks are usually form-encoded with a 'data' JSON field
-        raw_data = request.form.get("data")
-        if raw_data:
-            try:
-                payload = json.loads(raw_data)
-            except Exception as e:
-                logging.error("Failed to parse Ko-fi 'data' JSON: %s", e)
-
-    if payload is None:
-        # Fallback: just store the raw body so we can see what came in
-        payload = {"raw_body": request.get_data(as_text=True)}
-
-    # Extract some summary info, best-effort
-    event_type = payload.get("type") or payload.get("type_of_thing") or "-"
-    from_name = payload.get("from_name") or "-"
-    amount = payload.get("amount") or payload.get("total") or "-"
-    message = payload.get("message") or "-"
-    tier_or_product = (
-        payload.get("tier_name")
-        or (payload.get("shop_item") or {}).get("item_name")
-        or "-"
-    )
-
-    logging.info(
-        "Ko-fi event=%s from=%s amount=%s message=%s tier_or_product=%s",
-        event_type, from_name, amount, message, tier_or_product,
-    )
-
-    # Append full payload to log file
     try:
         with LOG_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload) + "\n")
-        logging.info("Wrote Ko-fi payload to %s", LOG_PATH)
+        logging.info("Appended webhook payload to %s", LOG_PATH)
     except Exception as e:
-        logging.error("Failed to write Ko-fi event to %s: %s", LOG_PATH, e)
+        logging.error("Failed to write webhook payload to %s: %s", LOG_PATH, e)
 
+    # Always return 200 for now so Ko-fi doesn't keep retrying
     return "", 200
 
 
