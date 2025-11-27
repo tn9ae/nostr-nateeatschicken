@@ -59,17 +59,39 @@ def log_payload_summary(payload: dict) -> None:
 
 @app.post("/kofi-webhook")
 def kofi_webhook():
-    payload = request.get_json(silent=True)
+    payload = None
+
+    if request.form:
+        form_payload = request.form.get("data")
+        if form_payload:
+            try:
+                payload = json.loads(form_payload)
+                logging.debug("Ko-fi payload (form): %s", form_payload)
+            except json.JSONDecodeError:
+                logging.error("Failed to decode Ko-fi form payload: %s", form_payload)
+
     if payload is None:
-        payload = {}
-        logging.debug("Ko-fi payload (raw): %s", request.get_data(as_text=True))
-    else:
-        logging.debug("Ko-fi payload: %s", json.dumps(payload))
+        payload = request.get_json(silent=True)
+        if payload is not None:
+            logging.debug("Ko-fi payload (json): %s", json.dumps(payload))
+
+    if not isinstance(payload, dict):
+        raw_body = request.get_data(as_text=True)
+        logging.error("Unable to parse Ko-fi payload, body=%s", raw_body)
+        return "ok", 200
 
     if not verify_token(payload):
         return "forbidden", 403
 
     log_payload_summary(payload)
+
+    log_path = os.path.join(os.path.dirname(__file__), "kofi_events.log")
+    try:
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps(payload))
+            log_file.write("\n")
+    except Exception:
+        logging.exception("Failed to write Ko-fi payload to log file")
 
     return "ok", 200
 
