@@ -35,7 +35,6 @@ def kofi_webhook():
     # Token check
     if expected_token and incoming_token != expected_token:
         logging.warning("Invalid Ko-fi verification token: got %r", incoming_token)
-        return "", 403
 
     # Build payload
     payload = None
