@@ -1,6 +1,4 @@
 nostr.nateeatschicken.xyz {
-    root * /srv
-
     @kofi_webhook {
         path /kofi-webhook
     }
@@ -9,15 +7,15 @@ nostr.nateeatschicken.xyz {
         reverse_proxy 172.17.0.1:5000
     }
 
-    handle {
-        handle_path /.well-known/* {
-            root * /srv/.well-known
-            file_server
-        }
+    root * /srv
+    file_server
 
+    handle_path /.well-known/* {
+        root * /srv/.well-known
         file_server
     }
 
+    # ...leave the rest of the block as it is...
 }
 
 relay.nateeatschicken.xyz {
