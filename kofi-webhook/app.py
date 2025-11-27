@@ -2,18 +2,29 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 from flask import Flask, request
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
+LOG_PATH = Path(__file__).with_name("kofi_events.log")
 
 
 def verify_token(payload: dict) -> bool:
     expected = os.getenv("KOFI_VERIFICATION_TOKEN")
     if not expected:
         return True
-    return payload.get("verification_token") == expected
+    payload = payload or {}
+    incoming_token = (
+        request.headers.get("X-Ko-Fi-Verification-Token")
+        or payload.get("verification_token")
+        or request.form.get("verification_token")
+    )
+    if incoming_token != expected:
+        logging.warning("Invalid Ko-fi verification token")
+        return False
+    return True
 
 
 def truncate_message(message: str, limit: int = 120) -> str:
@@ -57,43 +68,42 @@ def log_payload_summary(payload: dict) -> None:
     )
 
 
-@app.post("/kofi-webhook")
+@app.route("/kofi-webhook", methods=["POST"])
 def kofi_webhook():
     payload = None
 
-    if request.form:
-        form_payload = request.form.get("data")
-        if form_payload:
-            try:
-                payload = json.loads(form_payload)
-                logging.debug("Ko-fi payload (form): %s", form_payload)
-            except json.JSONDecodeError:
-                logging.error("Failed to decode Ko-fi form payload: %s", form_payload)
-
-    if payload is None:
+    if request.is_json:
         payload = request.get_json(silent=True)
         if payload is not None:
             logging.debug("Ko-fi payload (json): %s", json.dumps(payload))
+    else:
+        raw_data = request.form.get("data")
+        if raw_data:
+            try:
+                payload = json.loads(raw_data)
+                logging.debug("Ko-fi payload (form): %s", raw_data)
+            except Exception as exc:  # noqa: BLE001
+                logging.error("Failed to parse Ko-fi form data JSON: %s", exc)
 
-    if not isinstance(payload, dict):
+    if payload is None:
         raw_body = request.get_data(as_text=True)
+        logging.debug("Ko-fi payload (raw): %s", raw_body)
         logging.error("Unable to parse Ko-fi payload, body=%s", raw_body)
-        return "ok", 200
+        payload = {"raw_body": raw_body}
 
     if not verify_token(payload):
-        return "forbidden", 403
+        return "", 403
 
     log_payload_summary(payload)
 
-    log_path = os.path.join(os.path.dirname(__file__), "kofi_events.log")
     try:
-        with open(log_path, "a", encoding="utf-8") as log_file:
+        with LOG_PATH.open("a", encoding="utf-8") as log_file:
             log_file.write(json.dumps(payload))
             log_file.write("\n")
-    except Exception:
-        logging.exception("Failed to write Ko-fi payload to log file")
+    except Exception as exc:  # noqa: BLE001
+        logging.error("Failed to write Ko-fi event to log file: %s", exc)
 
-    return "ok", 200
+    return "", 200
 
 
 if __name__ == "__main__":
