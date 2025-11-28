@@ -1,26 +1,14 @@
 nostr.nateeatschicken.xyz {
+    root * /opt/nostr/proxy/site
+
     @kofi_api {
         path /kofi-webhook /claim-handle
     }
-
     handle @kofi_api {
         reverse_proxy 172.17.0.1:5000
     }
 
-    handle_path /claim {
-        rewrite * /claim.html
-        file_server
-    }
-
-    root * /opt/nostr/site
     file_server
-
-    handle_path /.well-known/* {
-        root * /opt/nostr/site/.well-known
-        file_server
-    }
-
-    # ...leave the rest of the block as it is...
 }
 
 relay.nateeatschicken.xyz {
