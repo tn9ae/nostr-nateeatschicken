@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
 
 
-NOSTR_JSON_PATH = Path(__file__).resolve().parent / "site" / ".well-known" / "nostr.json"
+FILE_PATH = Path("/opt/nostr/site/.well-known/nostr.json")
 PUBKEY_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
@@ -17,47 +16,57 @@ class _ArgumentParser(argparse.ArgumentParser):
         self.exit(1, f"{self.prog}: error: {message}\n")
 
 
+def ensure_parent_dir() -> None:
+    FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+
 def load_data() -> dict:
-    if NOSTR_JSON_PATH.exists():
-        with NOSTR_JSON_PATH.open("r", encoding="utf-8") as f:
+    if FILE_PATH.exists():
+        with FILE_PATH.open("r", encoding="utf-8") as f:
             return json.load(f)
     return {"names": {}}
 
 
-def write_data(data: dict) -> None:
-    NOSTR_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = NOSTR_JSON_PATH.with_name(NOSTR_JSON_PATH.name + ".tmp")
-    with tmp_path.open("w", encoding="utf-8") as f:
+def save_data(data: dict) -> None:
+    ensure_parent_dir()
+    with FILE_PATH.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
-    os.replace(tmp_path, NOSTR_JSON_PATH)
 
 
-def ensure_valid_pubkey(pubkey: str) -> None:
-    if not PUBKEY_RE.fullmatch(pubkey):
+def normalize_handle(name: str) -> str:
+    handle = (name or "").strip().lower()
+    if not handle:
+        print("Error: handle must be non-empty.", file=sys.stderr)
+        sys.exit(1)
+    return handle
+
+
+def validate_pubkey(pubkey: str) -> None:
+    if not PUBKEY_RE.fullmatch(pubkey or ""):
         print("Error: pubkey must be exactly 64 hexadecimal characters.", file=sys.stderr)
         sys.exit(1)
 
 
 def add_handle(handle: str, pubkey: str) -> None:
-    ensure_valid_pubkey(pubkey)
+    handle_norm = normalize_handle(handle)
+    validate_pubkey(pubkey)
     data = load_data()
     names = data.setdefault("names", {})
-    handle_lower = handle.lower()
-    names[handle_lower] = pubkey
-    write_data(data)
-    print(f"Stored handle '{handle_lower}' -> {pubkey}")
+    names[handle_norm] = pubkey
+    save_data(data)
+    print(f"Stored handle '{handle_norm}' -> {pubkey}")
 
 
 def remove_handle(handle: str) -> None:
+    handle_norm = normalize_handle(handle)
     data = load_data()
     names = data.setdefault("names", {})
-    handle_lower = handle.lower()
-    if handle_lower in names:
-        del names[handle_lower]
-        write_data(data)
-        print(f"Removed handle '{handle_lower}'")
+    if handle_norm in names:
+        del names[handle_norm]
+        save_data(data)
+        print(f"Removed handle '{handle_norm}'")
     else:
-        print(f"Handle '{handle_lower}' not found; nothing removed.")
+        print(f"Handle '{handle_norm}' not found; nothing to remove.")
 
 
 def list_handles() -> None:
@@ -67,16 +76,16 @@ def list_handles() -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = _ArgumentParser(description="Manage NIP-05 nostr.json entries.")
+    parser = _ArgumentParser(description="Manage /opt/nostr/site/.well-known/nostr.json NIP-05 mappings.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     add_parser = subparsers.add_parser("add", help="Add or update a handle mapping.")
     add_parser.add_argument("--name", required=True, help="Handle to add (will be lowercased).")
-    add_parser.add_argument("--pubkey", required=True, help="Hex public key to associate.")
+    add_parser.add_argument("--pubkey", required=True, help="64-character hex public key.")
     add_parser.set_defaults(func=lambda args: add_handle(args.name, args.pubkey))
 
     remove_parser = subparsers.add_parser("remove", help="Remove a handle mapping.")
-    remove_parser.add_argument("--name", required=True, help="Handle to remove.")
+    remove_parser.add_argument("--name", required=True, help="Handle to remove (case-insensitive).")
     remove_parser.set_defaults(func=lambda args: remove_handle(args.name))
 
     list_parser = subparsers.add_parser("list", help="List all handle mappings.")
