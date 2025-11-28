@@ -12,11 +12,11 @@ nostr.nateeatschicken.xyz {
         file_server
     }
 
-    root * /srv
+    root * /opt/nostr/site
     file_server
 
     handle_path /.well-known/* {
-        root * /srv/.well-known
+        root * /opt/nostr/site/.well-known
         file_server
     }
 
