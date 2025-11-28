@@ -1,9 +1,9 @@
 nostr.nateeatschicken.xyz {
-    @kofi_webhook {
-        path /kofi-webhook
+    @kofi_api {
+        path /kofi-webhook /claim-handle
     }
 
-    handle @kofi_webhook {
+    handle @kofi_api {
         reverse_proxy 172.17.0.1:5000
     }
 
