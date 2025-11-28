@@ -7,6 +7,11 @@ nostr.nateeatschicken.xyz {
         reverse_proxy 172.17.0.1:5000
     }
 
+    handle_path /claim {
+        rewrite * /claim.html
+        file_server
+    }
+
     root * /srv
     file_server
 
