@@ -5,18 +5,20 @@ import re
 import subprocess
 from pathlib import Path
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-LOG_PATH = Path(__file__).with_name("kofi_events.log")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+KOFI_LOG = REPO_ROOT / "kofi-webhook" / "kofi_events.log"
 PRODUCT_MAP = {
     # Ko-fi direct_link_code -> internal action key
     "2d36c00264": "nostr_handle",  # Nostr handle product (update if needed)
     # "OTHER_CODE_HERE": "relay_power",
 }
+HANDLE_PRODUCT_CODES = {"2d36c00264"}  # direct_link_code for the Nostr handle product
 
 
 def parse_handle_and_pubkey_from_message(message: str):
@@ -74,6 +76,111 @@ def extract_kofi_payload():
         kofi_data = json_body
 
     return kofi_data, json_body, form_dict
+
+
+def has_valid_shop_order(email: str) -> bool:
+    """
+    Return True if kofi_events.log contains at least one Shop Order
+    for this email and a shop_items[*].direct_link_code in HANDLE_PRODUCT_CODES.
+    On parse errors, log and keep going. If kofi_events.log doesn't exist, return False.
+    """
+    if not KOFI_LOG.exists():
+        return False
+
+    email_lower = (email or "").strip().lower()
+    if not email_lower:
+        return False
+
+    try:
+        with KOFI_LOG.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    evt = json.loads(line)
+                except Exception as e:
+                    logging.warning("Failed to parse log line in %s: %s", KOFI_LOG, e)
+                    continue
+
+                kdata = evt.get("kofi_data")
+                if not isinstance(kdata, dict):
+                    continue
+                if kdata.get("type") != "Shop Order":
+                    continue
+                if (kdata.get("email") or "").strip().lower() != email_lower:
+                    continue
+                shop_items = kdata.get("shop_items") or []
+                for item in shop_items:
+                    code = item.get("direct_link_code")
+                    if code in HANDLE_PRODUCT_CODES:
+                        return True
+    except Exception as e:
+        logging.error("Error while scanning %s: %s", KOFI_LOG, e)
+
+    return False
+
+
+@app.route("/claim-handle", methods=["POST"])
+def claim_handle():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "Invalid JSON body."}), 400
+
+    email = (payload.get("email") or "").strip()
+    handle = (payload.get("handle") or "").strip().lower()
+    hexpub = (payload.get("hexpub") or "").strip().lower()
+
+    if not email:
+        return jsonify({"ok": False, "error": "Email is required."}), 400
+    if not handle or not re.fullmatch(r"[a-zA-Z0-9_.-]+", handle):
+        return jsonify({"ok": False, "error": "Handle is required and must be alphanumeric with ._-"}), 400
+    if not hexpub or not re.fullmatch(r"[0-9a-fA-F]{64}", hexpub):
+        return jsonify({"ok": False, "error": "Hex pubkey must be 64 hexadecimal characters."}), 400
+
+    if not has_valid_shop_order(email):
+        logging.warning("No valid Ko-fi Shop Order found for email=%s", email)
+        return jsonify({"ok": False, "error": "No valid Ko-fi order found for this email."}), 403
+
+    try:
+        result = subprocess.run(
+            ["python3", "manage_nip05.py", "add", "--name", handle, "--pubkey", hexpub],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        logging.info(
+            "manage_nip05.py claim success: handle=%s hexpub=%s stdout=%s",
+            handle,
+            hexpub,
+            (result.stdout or "").strip(),
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error("manage_nip05.py failed during claim: %s %s", e, e.stderr)
+        return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
+
+    # Optional: also add to supporters list.
+    # try:
+    #     subprocess.run(
+    #         ["python3", "manage_supporters.py", "add", "--pubkey", hexpub],
+    #         cwd=REPO_ROOT,
+    #         capture_output=True,
+    #         text=True,
+    #         check=True,
+    #     )
+    # except subprocess.CalledProcessError as e:
+    #     logging.warning("manage_supporters.py add failed during claim: %s %s", e, e.stderr)
+
+    log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
+    try:
+        KOFI_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with KOFI_LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as e:
+        logging.error("Failed to record claim in %s: %s", KOFI_LOG, e)
+
+    return jsonify({"ok": True, "message": "Handle created. It may take a minute to propagate."}), 200
 
 
 @app.route("/kofi-webhook", methods=["POST"])
@@ -156,7 +263,7 @@ def kofi_webhook():
                 try:
                     result = subprocess.run(
                         ["python3", "manage_nip05.py", "add", "--name", handle, "--pubkey", pubkey],
-                        cwd=Path(__file__).resolve().parents[1],
+                        cwd=REPO_ROOT,
                         capture_output=True,
                         text=True,
                         check=True,
@@ -180,7 +287,7 @@ def kofi_webhook():
                 try:
                     result = subprocess.run(
                         ["python3", "manage_supporters.py", "add", "--pubkey", pubkey],
-                        cwd=Path(__file__).resolve().parents[1],
+                        cwd=REPO_ROOT,
                         capture_output=True,
                         text=True,
                         check=True,
@@ -209,10 +316,11 @@ def kofi_webhook():
     }
 
     try:
-        with LOG_PATH.open("a", encoding="utf-8") as f:
+        KOFI_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with KOFI_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps(payload_to_log) + "\n")
     except Exception as e:
-        logging.error("Failed to write Ko-fi event to %s: %s", LOG_PATH, e)
+        logging.error("Failed to write Ko-fi event to %s: %s", KOFI_LOG, e)
 
     return "", status
 
