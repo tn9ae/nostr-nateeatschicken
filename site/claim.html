@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claim your Nostr handle</title>
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #586075;
+      --accent: #3a6ff7;
+      --border: #d9dce5;
+      --error: #c0392b;
+      --success: #2d8a3f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.4rem;
+    }
+    p.helper {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 14px 0 6px;
+    }
+    input, textarea, button {
+      width: 100%;
+      font: inherit;
+    }
+    input, textarea {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfbfd;
+    }
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+    small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .row button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .row button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(58, 111, 247, 0.25);
+    }
+    .row button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .status {
+      margin-top: 16px;
+      font-size: 0.95rem;
+    }
+    .status.error { color: var(--error); }
+    .status.success { color: var(--success); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Claim your Nostr handle</h1>
+    <p class="helper">Provide your contact info and Nostr details so we can set up your handle.</p>
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+
+    <label for="handle">Desired handle</label>
+    <input id="handle" type="text" autocomplete="off" placeholder="yourname">
+    <small>Only letters, numbers, dots, dashes, underscores.</small>
+
+    <label for="npub">Nostr npub</label>
+    <input id="npub" type="text" autocomplete="off" placeholder="npub1..." spellcheck="false">
+    <small>You can copy this from your Nostr app.</small>
+
+    <div class="row">
+      <button id="convert-btn" type="button">Convert npub → hex</button>
+    </div>
+    <div class="status" id="convert-status"></div>
+
+    <label for="hexpub">Hex pubkey (read-only)</label>
+    <textarea id="hexpub" readonly placeholder="Conversion result will appear here"></textarea>
+
+    <div class="row" style="margin-top: 18px;">
+      <button id="submit-btn" type="button">Submit</button>
+    </div>
+    <div class="status" id="submit-status"></div>
+  </div>
+
+  <script>
+    const CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    const CHARSET_REV = Object.fromEntries(CHARSET.split("").map((c, i) => [c, i]));
+
+    function bech32Polymod(values) {
+      const GENERATORS = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+      let chk = 1;
+      for (const v of values) {
+        const top = chk >>> 25;
+        chk = ((chk & 0x1ffffff) << 5) ^ v;
+        for (let i = 0; i < 5; i++) {
+          if ((top >>> i) & 1) {
+            chk ^= GENERATORS[i];
+          }
+        }
+      }
+      return chk;
+    }
+
+    function bech32HrpExpand(hrp) {
+      const ret = [];
+      for (let i = 0; i < hrp.length; i++) ret.push(hrp.charCodeAt(i) >> 5);
+      ret.push(0);
+      for (let i = 0; i < hrp.length; i++) ret.push(hrp.charCodeAt(i) & 31);
+      return ret;
+    }
+
+    function bech32VerifyChecksum(hrp, data) {
+      return bech32Polymod([...bech32HrpExpand(hrp), ...data]) === 1;
+    }
+
+    function bech32Decode(bech) {
+      if (!bech || bech.length < 8) {
+        throw new Error("Bech32 string too short");
+      }
+      const lower = bech.toLowerCase();
+      const upper = bech.toUpperCase();
+      if (bech !== lower && bech !== upper) {
+        throw new Error("Mixed case bech32 not allowed");
+      }
+      const s = lower;
+      const pos = s.lastIndexOf("1");
+      if (pos < 1 || pos + 7 > s.length) {
+        throw new Error("Invalid bech32 separator position");
+      }
+      const hrp = s.slice(0, pos);
+      const data = [];
+      for (let i = pos + 1; i < s.length; i++) {
+        const ch = s[i];
+        const v = CHARSET_REV[ch];
+        if (v === undefined) throw new Error("Invalid bech32 character");
+        data.push(v);
+      }
+      if (!bech32VerifyChecksum(hrp, data)) {
+        throw new Error("Invalid bech32 checksum");
+      }
+      return { hrp, data: data.slice(0, -6) };
+    }
+
+    function convertBits(data, fromBits, toBits, pad = true) {
+      let acc = 0;
+      let bits = 0;
+      const ret = [];
+      const maxv = (1 << toBits) - 1;
+      for (const value of data) {
+        if (value < 0 || (value >> fromBits) !== 0) {
+          throw new Error("Invalid value during convertBits");
+        }
+        acc = (acc << fromBits) | value;
+        bits += fromBits;
+        while (bits >= toBits) {
+          bits -= toBits;
+          ret.push((acc >> bits) & maxv);
+        }
+      }
+      if (pad) {
+        if (bits > 0) ret.push((acc << (toBits - bits)) & maxv);
+      } else if (bits >= fromBits || ((acc << (toBits - bits)) & maxv)) {
+        throw new Error("Invalid padding");
+      }
+      return ret;
+    }
+
+    function npubToHex(npub) {
+      if (!npub.startsWith("npub1")) {
+        throw new Error("npub must start with 'npub1'");
+      }
+      const { hrp, data } = bech32Decode(npub);
+      if (hrp !== "npub") {
+        throw new Error(`Expected hrp 'npub', got '${hrp}'`);
+      }
+      const bytes = convertBits(data, 5, 8, false);
+      if (bytes.length !== 32) {
+        throw new Error("Decoded length mismatch (expected 32 bytes)");
+      }
+      return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function setStatus(el, message, isError = false) {
+      el.textContent = message || "";
+      el.className = "status" + (message ? (isError ? " error" : " success") : "");
+    }
+
+    document.getElementById("convert-btn").addEventListener("click", () => {
+      const npubInput = document.getElementById("npub");
+      const hexOutput = document.getElementById("hexpub");
+      const statusEl = document.getElementById("convert-status");
+      setStatus(statusEl, "");
+      try {
+        const npub = npubInput.value.trim();
+        const hex = npubToHex(npub);
+        hexOutput.value = hex;
+        setStatus(statusEl, "Converted npub to hex.", false);
+      } catch (err) {
+        hexOutput.value = "";
+        setStatus(statusEl, err.message || "Conversion failed", true);
+      }
+    });
+
+    document.getElementById("submit-btn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const handle = document.getElementById("handle").value.trim();
+      const hexpub = document.getElementById("hexpub").value.trim();
+      const statusEl = document.getElementById("submit-status");
+      setStatus(statusEl, "");
+
+      if (!email || !handle || !hexpub) {
+        setStatus(statusEl, "Email, handle, and hex pubkey are required.", true);
+        return;
+      }
+
+      try {
+        const resp = await fetch("/claim-handle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, handle, hexpub }),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          setStatus(statusEl, data.message || "Submitted successfully.", false);
+        } else {
+          setStatus(statusEl, data.error || "Submission failed.", true);
+        }
+      } catch (err) {
+        setStatus(statusEl, "Network or server error. Please try again.", true);
+      }
+    });
+  </script>
+</body>
+</html>
