@@ -5,11 +5,11 @@ REPO_DIR="$HOME/nostr-project"
 LIVE_RELAY_DIR="/opt/nostr/relay"
 CONTAINER_NAME="nostr-relay-1"
 SITE_SRC="$REPO_DIR/site"
-SITE_DST="/opt/nostr/site"
+SITE_DST="/opt/nostr/proxy/site"
 
 echo "=== Deploy started at $(date) ==="
 
-echo "[1/5] Fetching latest code from origin/main..."
+echo "[1/6] Fetching latest code from origin/main..."
 cd "$REPO_DIR"
 git fetch origin
 git reset --hard origin/main
