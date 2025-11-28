@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import os
 import re
@@ -8,6 +9,12 @@ from pathlib import Path
 
 NOSTR_JSON_PATH = Path(__file__).resolve().parent / "site" / ".well-known" / "nostr.json"
 PUBKEY_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:  # type: ignore[override]
+        self.print_usage(sys.stderr)
+        self.exit(1, f"{self.prog}: error: {message}\n")
 
 
 def load_data() -> dict:
@@ -25,17 +32,6 @@ def write_data(data: dict) -> None:
     os.replace(tmp_path, NOSTR_JSON_PATH)
 
 
-def print_usage() -> None:
-    prog = Path(sys.argv[0]).name
-    usage = (
-        f"Usage:\n"
-        f"  python3 {prog} add <handle> <hex_pubkey>\n"
-        f"  python3 {prog} remove <handle>\n"
-        f"  python3 {prog} list"
-    )
-    print(usage, file=sys.stderr)
-
-
 def ensure_valid_pubkey(pubkey: str) -> None:
     if not PUBKEY_RE.fullmatch(pubkey):
         print("Error: pubkey must be exactly 64 hexadecimal characters.", file=sys.stderr)
@@ -45,18 +41,23 @@ def ensure_valid_pubkey(pubkey: str) -> None:
 def add_handle(handle: str, pubkey: str) -> None:
     ensure_valid_pubkey(pubkey)
     data = load_data()
-    data.setdefault("names", {})
-    data["names"][handle] = pubkey
+    names = data.setdefault("names", {})
+    handle_lower = handle.lower()
+    names[handle_lower] = pubkey
     write_data(data)
+    print(f"Stored handle '{handle_lower}' -> {pubkey}")
 
 
 def remove_handle(handle: str) -> None:
     data = load_data()
-    if "names" in data and handle in data["names"]:
-        del data["names"][handle]
+    names = data.setdefault("names", {})
+    handle_lower = handle.lower()
+    if handle_lower in names:
+        del names[handle_lower]
         write_data(data)
+        print(f"Removed handle '{handle_lower}'")
     else:
-        print(f"Handle '{handle}' not found; nothing to remove.")
+        print(f"Handle '{handle_lower}' not found; nothing removed.")
 
 
 def list_handles() -> None:
@@ -65,33 +66,29 @@ def list_handles() -> None:
         print(f"{handle} {pubkey}")
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = _ArgumentParser(description="Manage NIP-05 nostr.json entries.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    add_parser = subparsers.add_parser("add", help="Add or update a handle mapping.")
+    add_parser.add_argument("--name", required=True, help="Handle to add (will be lowercased).")
+    add_parser.add_argument("--pubkey", required=True, help="Hex public key to associate.")
+    add_parser.set_defaults(func=lambda args: add_handle(args.name, args.pubkey))
+
+    remove_parser = subparsers.add_parser("remove", help="Remove a handle mapping.")
+    remove_parser.add_argument("--name", required=True, help="Handle to remove.")
+    remove_parser.set_defaults(func=lambda args: remove_handle(args.name))
+
+    list_parser = subparsers.add_parser("list", help="List all handle mappings.")
+    list_parser.set_defaults(func=lambda args: list_handles())
+
+    return parser
+
+
 def main() -> None:
-    if len(sys.argv) < 2:
-        print_usage()
-        sys.exit(1)
-
-    command = sys.argv[1].lower()
-
-    if command == "add":
-        if len(sys.argv) != 4:
-            print_usage()
-            sys.exit(1)
-        handle, pubkey = sys.argv[2], sys.argv[3]
-        add_handle(handle, pubkey)
-    elif command == "remove":
-        if len(sys.argv) != 3:
-            print_usage()
-            sys.exit(1)
-        handle = sys.argv[2]
-        remove_handle(handle)
-    elif command == "list":
-        if len(sys.argv) != 2:
-            print_usage()
-            sys.exit(1)
-        list_handles()
-    else:
-        print_usage()
-        sys.exit(1)
+    parser = build_parser()
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":

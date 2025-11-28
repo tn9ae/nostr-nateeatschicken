@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import re
 import sys
@@ -9,15 +10,10 @@ SUPPORTERS_PATH = Path(__file__).resolve().parent / "relay" / "supporters.txt"
 PUBKEY_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
-def print_usage() -> None:
-    prog = Path(sys.argv[0]).name
-    msg = (
-        "Usage:\n"
-        f"  python3 {prog} add <hex_pubkey>\n"
-        f"  python3 {prog} remove <hex_pubkey>\n"
-        f"  python3 {prog} list"
-    )
-    print(msg, file=sys.stderr)
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:  # type: ignore[override]
+        self.print_usage(sys.stderr)
+        self.exit(1, f"{self.prog}: error: {message}\n")
 
 
 def ensure_valid_pubkey(pubkey: str) -> None:
@@ -33,7 +29,7 @@ def load_lines() -> list[str]:
         return f.readlines()
 
 
-def existing_pubkeys(lines: list[str]) -> list[str]:
+def filtered_pubkeys(lines: list[str]) -> list[str]:
     keys = []
     for line in lines:
         stripped = line.strip()
@@ -54,74 +50,72 @@ def write_lines_atomic(lines: list[str]) -> None:
 def add_pubkey(pubkey: str) -> None:
     ensure_valid_pubkey(pubkey)
     lines = load_lines()
-    current_keys_lower = {k.lower() for k in existing_pubkeys(lines)}
-    if pubkey.lower() in current_keys_lower:
-        print("Pubkey already present; nothing to add.")
+    existing = filtered_pubkeys(lines)
+    if pubkey in existing:
+        print("Pubkey already present; nothing added.")
         return
 
     SUPPORTERS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    newline_prefix = ""
     if SUPPORTERS_PATH.exists():
         current_content = SUPPORTERS_PATH.read_text(encoding="utf-8")
         newline_prefix = "" if current_content.endswith("\n") or current_content == "" else "\n"
-    else:
-        newline_prefix = ""
 
     with SUPPORTERS_PATH.open("a", encoding="utf-8") as f:
         f.write(f"{newline_prefix}{pubkey}\n")
+
+    print(f"Added pubkey {pubkey}")
 
 
 def remove_pubkey(pubkey: str) -> None:
     ensure_valid_pubkey(pubkey)
     lines = load_lines()
-    target = pubkey.lower()
     kept: list[str] = []
     found = False
 
     for line in lines:
         stripped = line.strip()
-        if stripped and not stripped.startswith("#") and stripped.lower() == target:
+        if stripped and not stripped.startswith("#") and stripped == pubkey:
             found = True
             continue
         kept.append(line)
 
     if not found:
-        print("Pubkey not found; nothing to remove.")
+        print("Pubkey not found; nothing removed.")
         return
 
     write_lines_atomic(kept)
+    print(f"Removed pubkey {pubkey}")
 
 
 def list_pubkeys() -> None:
     lines = load_lines()
-    for key in existing_pubkeys(lines):
+    for key in filtered_pubkeys(lines):
         print(key)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = _ArgumentParser(description="Manage relay/supporters.txt entries.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    add_parser = subparsers.add_parser("add", help="Add a supporter pubkey.")
+    add_parser.add_argument("--pubkey", required=True, help="Hex public key to add.")
+    add_parser.set_defaults(func=lambda args: add_pubkey(args.pubkey))
+
+    remove_parser = subparsers.add_parser("remove", help="Remove a supporter pubkey.")
+    remove_parser.add_argument("--pubkey", required=True, help="Hex public key to remove.")
+    remove_parser.set_defaults(func=lambda args: remove_pubkey(args.pubkey))
+
+    list_parser = subparsers.add_parser("list", help="List supporter pubkeys.")
+    list_parser.set_defaults(func=lambda args: list_pubkeys())
+
+    return parser
+
+
 def main() -> None:
-    if len(sys.argv) < 2:
-        print_usage()
-        sys.exit(1)
-
-    command = sys.argv[1].lower()
-
-    if command == "add":
-        if len(sys.argv) != 3:
-            print_usage()
-            sys.exit(1)
-        add_pubkey(sys.argv[2])
-    elif command == "remove":
-        if len(sys.argv) != 3:
-            print_usage()
-            sys.exit(1)
-        remove_pubkey(sys.argv[2])
-    elif command == "list":
-        if len(sys.argv) != 2:
-            print_usage()
-            sys.exit(1)
-        list_pubkeys()
-    else:
-        print_usage()
-        sys.exit(1)
+    parser = build_parser()
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":
