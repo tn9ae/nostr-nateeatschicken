@@ -12,35 +12,40 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 LOG_PATH = Path(__file__).with_name("kofi_events.log")
+PRODUCT_MAP = {
+    # Ko-fi direct_link_code -> internal action key
+    "2d36c00264": "nostr_handle",  # Nostr handle product (update if needed)
+    # "OTHER_CODE_HERE": "relay_power",
+}
 
 
-def parse_handle_and_npub_from_message(message: str):
+def parse_handle_and_pubkey_from_message(message: str):
     """
-    Very simple parser for Ko-fi message text.
+    Parse 'handle' and a 64-char hex pubkey from Ko-fi message text.
 
-    Expected patterns inside the message, in any order:
+    Expected patterns, in any order:
       handle: myname
-      npub: npub1....
+      hexpub: 64_hex_characters
 
-    Returns (handle, npub_str) or (None, None) if not found.
+    Returns (handle, hex_pubkey) or (None, None) if not found.
     """
     if not message:
         return None, None
 
     handle = None
-    npub = None
+    pubkey = None
 
     # case-insensitive 'handle: something'
     m = re.search(r"handle\s*:\s*([a-zA-Z0-9_.-]+)", message, re.IGNORECASE)
     if m:
-        handle = m.group(1)
+        handle = m.group(1).lower()
 
-    # npub starts with 'npub1'
-    m2 = re.search(r"(npub1[0-9a-zA-Z]+)", message)
+    # 64-char hex pubkey
+    m2 = re.search(r"\b([0-9a-fA-F]{64})\b", message)
     if m2:
-        npub = m2.group(1)
+        pubkey = m2.group(1).lower()
 
-    return handle, npub
+    return handle, pubkey
 
 
 def extract_kofi_payload():
@@ -126,53 +131,68 @@ def kofi_webhook():
         status,
     )
 
-    # Action hooks based on event type (keep best-effort and non-blocking)
-    if status != 200:
-        logging.info("Skipping Ko-fi actions because status=%s", status)
-    elif not isinstance(kofi_data, dict):
-        logging.info("Skipping Ko-fi actions because kofi_data is not a dict")
-    else:
-        event_type_value = kofi_data.get("type")
-        if event_type_value == "Donation":
-            logging.info("Donation event received; no automated actions.")
-        elif event_type_value in ("Shop Order", "Shop"):
-            shop_items = kofi_data.get("shop_items") or []
-            for item in shop_items:
-                item_name = item.get("item_name", "")
-                message_text = kofi_data.get("message", "")
-                item_lower = item_name.lower()
+    actions_taken = []
 
-                if "nostr" in item_lower:
-                    handle, npub_str = parse_handle_and_npub_from_message(message_text)
-                    if handle and npub_str:
-                        logging.info(
-                            "Processing NIP-05 request handle=%s npub=%s (will assume npub already hex-converted)",
-                            handle,
-                            npub_str,
-                        )
-                        try:
-                            script_path = Path(__file__).resolve().parent.parent / "manage_nip05.py"
-                            subprocess.run(
-                                ["python3", str(script_path), "add", "--name", handle, "--pubkey", npub_str],
-                                check=True,
-                            )
-                            logging.info("manage_nip05.py add succeeded for handle=%s", handle)
-                        except Exception as e:
-                            logging.error("manage_nip05.py add failed for handle=%s: %s", handle, e)
-                    else:
-                        logging.info("Missing handle or npub in message for nostr item %r", item_name)
+    # Only act on valid, parsed Shop Orders
+    if status == 200 and isinstance(kofi_data, dict) and kofi_data.get("type") == "Shop Order":
+        shop_items = kofi_data.get("shop_items") or []
+        message_text = kofi_data.get("message") or ""
 
-                if "relay" in item_lower and "power" in item_lower:
-                    _, npub_str = parse_handle_and_npub_from_message(message_text)
-                    if npub_str:
-                        logging.info(
-                            "Relay power purchase detected; would add supporter npub=%s (hex conversion TBD)",
-                            npub_str,
-                        )
-                    else:
-                        logging.info("Relay power item lacks npub in message; skipping action.")
-        else:
-            logging.info("Unhandled Ko-fi type %r; no automated actions taken.", event_type_value)
+        handle, pubkey = parse_handle_and_pubkey_from_message(message_text)
+
+        for item in shop_items:
+            code = item.get("direct_link_code")
+            action = PRODUCT_MAP.get(code)
+
+            if not action:
+                logging.info("Ko-fi Shop item with unknown code %r, skipping", code)
+                continue
+
+            if action == "nostr_handle":
+                if not handle or not pubkey:
+                    logging.warning("Missing handle/pubkey in message for nostr_handle product; message=%r", message_text)
+                    continue
+
+                try:
+                    result = subprocess.run(
+                        ["python3", "manage_nip05.py", "add", "--name", handle, "--pubkey", pubkey],
+                        cwd=Path(__file__).resolve().parents[1],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                    logging.info(
+                        "manage_nip05.py add success: handle=%s pubkey=%s stdout=%s",
+                        handle,
+                        pubkey,
+                        result.stdout.strip(),
+                    )
+                    actions_taken.append(f"nip05:{handle}")
+                except subprocess.CalledProcessError as e:
+                    logging.error("manage_nip05.py failed: %s %s", e, e.stderr)
+
+            elif action == "relay_power":
+                # Placeholder for relay power user behaviour (e.g. manage_supporters.py add)
+                if not pubkey:
+                    logging.warning("Missing pubkey in message for relay_power product; message=%r", message_text)
+                    continue
+
+                try:
+                    result = subprocess.run(
+                        ["python3", "manage_supporters.py", "add", "--pubkey", pubkey],
+                        cwd=Path(__file__).resolve().parents[1],
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                    logging.info(
+                        "manage_supporters.py add success: pubkey=%s stdout=%s",
+                        pubkey,
+                        result.stdout.strip(),
+                    )
+                    actions_taken.append(f"relay:{pubkey}")
+                except subprocess.CalledProcessError as e:
+                    logging.error("manage_supporters.py failed: %s %s", e, e.stderr)
 
     # Log full structured info for debugging
     payload_to_log = {
@@ -185,6 +205,7 @@ def kofi_webhook():
         "json": json_body,
         "form": form_dict,
         "status": status,
+        "actions_taken": actions_taken,
     }
 
     try:
