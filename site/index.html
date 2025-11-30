@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NateEatsChicken – Nostr Relay & Handles</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #5a6478;
+      --accent: #3a6ff7;
+      --border: #d9dce5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: 32px 18px;
+    }
+    .card {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 1.9rem;
+    }
+    p.lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+    ul {
+      margin: 0 0 20px 18px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 16px 0 22px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f1f4ff;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 10px 20px rgba(58, 111, 247, 0.2);
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      background: #e8ecff;
+    }
+    .btn.primary:hover {
+      background: #305de0;
+      box-shadow: 0 14px 28px rgba(58, 111, 247, 0.25);
+    }
+    .links {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="lead" style="text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--accent); margin-bottom: 8px;">Nostr.nateeatschicken.xyz</p>
+    <h1>Nostr for humans, not just crypto nerds</h1>
+    <p class="lead">
+      Self-hosted relay and NIP-05 handles run by NateEatsChicken. Easy onboarding, spam protection,
+      and options for power users who need more throughput.
+    </p>
+
+    <ul>
+      <li>Free relay access with sensible limits and moderation.</li>
+      <li>Power-user relay tier for whitelisted keys and higher limits.</li>
+      <li>NIP-05 handles like <strong>name@nostr.nateeatschicken.xyz</strong> handled via Ko-fi.</li>
+    </ul>
+
+    <div class="actions">
+      <a class="btn primary" href="/claim">Get a handle</a>
+      <a class="btn" href="/support.html">Support &amp; pricing</a>
+      <a class="btn" href="/tools.html">Tools &amp; links</a>
+    </div>
+
+    <div>
+      <h2 style="margin: 0 0 10px; font-size: 1.2rem;">Connect</h2>
+      <div class="links">
+        <a href="https://www.tiktok.com/@nateeatschicken" target="_blank" rel="noreferrer">TikTok @nateeatschicken</a>
+        <a href="https://twitter.com/nateeatschicken" target="_blank" rel="noreferrer">X / Twitter @nateeatschicken</a>
+        <a href="nostr:npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2">Nostr npub (nostr: link)</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

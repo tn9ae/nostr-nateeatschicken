@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support & Pricing – NateEatsChicken Nostr</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #5a6478;
+      --accent: #3a6ff7;
+      --border: #d9dce5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: 32px 18px;
+    }
+    .card {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 1.8rem;
+    }
+    h2 {
+      margin: 18px 0 8px;
+      font-size: 1.25rem;
+    }
+    p {
+      margin: 0 0 12px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .links {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 15px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f1f4ff;
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      background: #e8ecff;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Support & Pricing</h1>
+    <p>Keep the relay running smoothly and grab a Nostr handle through Ko-fi.</p>
+
+    <section>
+      <h2>Free relay access</h2>
+      <p>
+        Open access with fair-use limits and spam protection. Great for getting started
+        without worrying about infra.
+      </p>
+    </section>
+
+    <section>
+      <h2>Power-user relay tier</h2>
+      <p>
+        Adds your pubkey to the whitelist for higher limits and priority. Helps cover hosting
+        costs so the relay stays healthy. See the Ko-fi shop for the current offering.
+      </p>
+    </section>
+
+    <section>
+      <h2>Nostr handles (NIP-05)</h2>
+      <p>
+        Get <strong>name@nostr.nateeatschicken.xyz</strong>. Pay via Ko-fi and use the
+        <a href="/claim">/claim</a> page to submit your details.
+      </p>
+    </section>
+
+    <div class="links">
+      <a class="btn" href="/index.html">← Back home</a>
+      <a class="btn" href="https://ko-fi.com/nateeatschicken/shop" target="_blank" rel="noreferrer">Ko-fi shop</a>
+    </div>
+  </main>
+</body>
+</html>
