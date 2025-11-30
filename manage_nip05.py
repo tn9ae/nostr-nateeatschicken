@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import logging
+import os
 import re
 import sys
+import tempfile
 from pathlib import Path
+from typing import Optional
 
 
-FILE_PATH = Path("/opt/nostr/site/.well-known/nostr.json")
+LIVE_NIP05_PATH = "/opt/nostr/proxy/site/.well-known/nostr.json"
+LIVE_NIP05 = Path(LIVE_NIP05_PATH)
 PUBKEY_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
@@ -16,21 +21,60 @@ class _ArgumentParser(argparse.ArgumentParser):
         self.exit(1, f"{self.prog}: error: {message}\n")
 
 
+def print_json_path() -> None:
+    print(f"Using NIP-05 file: {LIVE_NIP05_PATH}")
+
+
 def ensure_parent_dir() -> None:
-    FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LIVE_NIP05.parent.mkdir(parents=True, exist_ok=True)
 
 
 def load_data() -> dict:
-    if FILE_PATH.exists():
-        with FILE_PATH.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"names": {}}
+    print_json_path()
+    try:
+        content = LIVE_NIP05.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {"names": {}}
+
+    if not content.strip():
+        return {"names": {}}
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as exc:
+        logging.warning("Invalid JSON at %s; reinitializing empty mapping: %s", LIVE_NIP05_PATH, exc)
+        return {"names": {}}
+
+    if not isinstance(data, dict):
+        logging.warning("Unexpected data structure at %s; reinitializing empty mapping.", LIVE_NIP05_PATH)
+        return {"names": {}}
+
+    names = data.get("names")
+    if not isinstance(names, dict):
+        data["names"] = {}
+
+    return data
 
 
 def save_data(data: dict) -> None:
+    print_json_path()
     ensure_parent_dir()
-    with FILE_PATH.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, sort_keys=True)
+    tmp_file: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=LIVE_NIP05.parent, delete=False
+        ) as tmp:
+            json.dump(data, tmp, indent=2, sort_keys=True)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp_file = Path(tmp.name)
+        os.replace(tmp_file, LIVE_NIP05)
+    except Exception:
+        logging.exception("Failed to write NIP-05 data to %s", LIVE_NIP05_PATH)
+        raise
+    finally:
+        if tmp_file and tmp_file.exists():
+            tmp_file.unlink(missing_ok=True)
 
 
 def normalize_handle(name: str) -> str:
@@ -47,13 +91,14 @@ def validate_pubkey(pubkey: str) -> None:
         sys.exit(1)
 
 
-def add_handle(handle: str, pubkey: str) -> None:
+def claim_handle(handle: str, pubkey: str) -> None:
     handle_norm = normalize_handle(handle)
     validate_pubkey(pubkey)
     data = load_data()
     names = data.setdefault("names", {})
     names[handle_norm] = pubkey
     save_data(data)
+    logging.info("Updated live NIP-05 %s: %s -> %s", LIVE_NIP05_PATH, handle_norm, pubkey)
     print(f"Stored handle '{handle_norm}' -> {pubkey}")
 
 
@@ -69,27 +114,18 @@ def remove_handle(handle: str) -> None:
         print(f"Handle '{handle_norm}' not found; nothing to remove.")
 
 
-def list_handles() -> None:
-    data = load_data()
-    for handle, pubkey in sorted(data.get("names", {}).items()):
-        print(f"{handle} {pubkey}")
-
-
 def build_parser() -> argparse.ArgumentParser:
-    parser = _ArgumentParser(description="Manage /opt/nostr/site/.well-known/nostr.json NIP-05 mappings.")
+    parser = _ArgumentParser(description="Manage NIP-05 nostr.json mappings.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    add_parser = subparsers.add_parser("add", help="Add or update a handle mapping.")
-    add_parser.add_argument("--name", required=True, help="Handle to add (will be lowercased).")
-    add_parser.add_argument("--pubkey", required=True, help="64-character hex public key.")
-    add_parser.set_defaults(func=lambda args: add_handle(args.name, args.pubkey))
+    claim_parser = subparsers.add_parser("claim", help="Create or update a handle mapping.")
+    claim_parser.add_argument("handle", help="Handle to claim (will be lowercased).")
+    claim_parser.add_argument("pubkey", help="64-character hex public key.")
+    claim_parser.set_defaults(func=lambda args: claim_handle(args.handle, args.pubkey))
 
     remove_parser = subparsers.add_parser("remove", help="Remove a handle mapping.")
-    remove_parser.add_argument("--name", required=True, help="Handle to remove (case-insensitive).")
-    remove_parser.set_defaults(func=lambda args: remove_handle(args.name))
-
-    list_parser = subparsers.add_parser("list", help="List all handle mappings.")
-    list_parser.set_defaults(func=lambda args: list_handles())
+    remove_parser.add_argument("handle", help="Handle to remove (case-insensitive).")
+    remove_parser.set_defaults(func=lambda args: remove_handle(args.handle))
 
     return parser
 
