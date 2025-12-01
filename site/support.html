@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support & Pricing – NateEatsChicken Nostr</title>
+  <title>Tips & Support – NateEatsChicken Nostr</title>
   <style>
     :root {
       --bg: #f6f7fb;
@@ -17,101 +17,227 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      padding: 32px 18px;
     }
-    .card {
-      width: 100%;
-      max-width: 780px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+    a { color: inherit; text-decoration: none; }
+    .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+      background: rgba(246, 247, 251, 0.8);
+      border-bottom: 1px solid var(--border);
     }
-    h1 {
-      margin: 0 0 16px;
-      font-size: 1.8rem;
-    }
-    h2 {
-      margin: 18px 0 8px;
-      font-size: 1.25rem;
-    }
-    p {
-      margin: 0 0 12px;
-      line-height: 1.6;
-      color: var(--muted);
-    }
-    a {
-      color: var(--accent);
-      font-weight: 600;
-      text-decoration: none;
-    }
-    a:hover { text-decoration: underline; }
-    .links {
-      margin-top: 14px;
+    .nav {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
       gap: 12px;
       flex-wrap: wrap;
+    }
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nav-links a {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .nav-links a:hover { background: #eef1fb; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+      white-space: nowrap;
+    }
+    .pill button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 12px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    main { padding: 42px 0 24px; }
+    h1 { margin: 0 0 12px; font-size: 2rem; }
+    p.lead { margin: 0 0 14px; color: var(--muted); line-height: 1.6; }
+    section { margin-bottom: 26px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.05);
     }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 11px 15px;
-      border-radius: 10px;
+      padding: 12px 16px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: #f1f4ff;
       color: var(--accent);
-      font-weight: 600;
-      text-decoration: none;
+      font-weight: 700;
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-      background: #e8ecff;
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 10px 24px rgba(58, 111, 247, 0.2);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); background: #e8ecff; }
+    .btn.primary:hover { background: #305de0; }
+    .tip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      overflow: auto;
+    }
+    .tip-row code {
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .tip-row button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    footer {
+      text-align: center;
+      padding: 28px 0 38px;
+      color: var(--muted);
+      font-size: 0.95rem;
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Support & Pricing</h1>
-    <p>Keep the relay running smoothly and grab a Nostr handle through Ko-fi.</p>
-
-    <section>
-      <h2>Free relay access</h2>
-      <p>
-        Open access with fair-use limits and spam protection. Great for getting started
-        without worrying about infra.
-      </p>
-    </section>
-
-    <section>
-      <h2>Power-user relay tier</h2>
-      <p>
-        Adds your pubkey to the whitelist for higher limits and priority. Helps cover hosting
-        costs so the relay stays healthy. See the Ko-fi shop for the current offering.
-      </p>
-    </section>
-
-    <section>
-      <h2>Nostr handles (NIP-05)</h2>
-      <p>
-        Get <strong>name@nostr.nateeatschicken.xyz</strong>. Pay via Ko-fi and use the
-        <a href="/claim">/claim</a> page to submit your details.
-      </p>
-    </section>
-
-    <div class="links">
-      <a class="btn" href="/index.html">← Back home</a>
-      <a class="btn" href="https://ko-fi.com/nateeatschicken/shop" target="_blank" rel="noreferrer">Ko-fi shop</a>
+  <header>
+    <div class="container nav">
+      <div class="brand">NateEatsChicken</div>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/support.html">Support / Tips</a>
+        <a href="/tools.html">Tools I Use</a>
+        <a href="/claim">Claim handle</a>
+      </nav>
+      <div class="pill">
+        <span id="relay-url">wss://relay.nateeatschicken.xyz</span>
+        <button type="button" data-copy-target="relay-url">Copy</button>
+      </div>
     </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h1>Tips &amp; Support</h1>
+      <p class="lead">
+        This is a tip-funded side project. Tips help cover server costs and the time spent running and moderating the relay.
+        They are optional and not financial advice or any promise of returns—just a way to keep the chickens fed.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Tip via Ko-fi</h2>
+      <p class="lead">Quick and easy. Pick a tip amount and, if you want a NIP-05 handle, add the handle item in the shop.</p>
+      <a class="btn primary" href="https://ko-fi.com/nateeatschicken">Tip via Ko-fi</a>
+    </section>
+
+    <section class="card">
+      <h2>Tip with crypto / Nostr</h2>
+      <div class="tip-row" style="margin-top: 8px;">
+        <code id="support-lightning">nateeatschicken@blink.sv</code>
+        <button type="button" data-copy-target="support-lightning">Copy</button>
+      </div>
+      <div class="tip-row" style="margin-top: 10px;">
+        <code id="support-btc">bc1pjqzx0qpcxlxk2ah738l3vhn4hcy282fa95wgnelk0n5rnt454ens0ps3ep</code>
+        <button type="button" data-copy-target="support-btc">Copy</button>
+      </div>
+      <div class="tip-row" style="margin-top: 10px;">
+        <code id="support-npub">npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2</code>
+        <button type="button" data-copy-target="support-npub">Copy</button>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    Thanks for helping keep this human-run relay online.
+  </footer>
+
+  <script>
+    function copyTextFromId(targetId, button) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const text = el.textContent || "";
+
+      const setCopied = () => {
+        const original = button.textContent;
+        button.textContent = "Copied!";
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = original;
+          button.disabled = false;
+        }, 1500);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(setCopied).catch(() => fallbackCopy(text, setCopied));
+      } else {
+        fallbackCopy(text, setCopied);
+      }
+    }
+
+    function fallbackCopy(text, onDone) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try { document.execCommand("copy"); } catch (e) { console.error(e); }
+      document.body.removeChild(textarea);
+      if (onDone) onDone();
+    }
+
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-copy-target");
+        copyTextFromId(targetId, btn);
+      });
+    });
+  </script>
 </body>
 </html>
