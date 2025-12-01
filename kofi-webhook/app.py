@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
+APP_DIR = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[1]
 KOFI_LOG = REPO_ROOT / "kofi-webhook" / "kofi_events.log"
 PRODUCT_MAP = {
@@ -145,7 +146,7 @@ def claim_handle():
     try:
         nip05_result = subprocess.run(
             ["python3", "../manage_nip05.py", "claim", handle, hexpub],
-            cwd=Path(__file__).resolve().parent,
+            cwd=APP_DIR,
             capture_output=True,
             text=True,
             check=True,
@@ -158,13 +159,18 @@ def claim_handle():
             (nip05_result.stderr or "").strip(),
         )
     except subprocess.CalledProcessError as e:
-        logging.error("manage_nip05.py failed during claim: %s %s", e, e.stderr)
+        logging.error(
+            "manage_nip05.py failed during claim: %s stdout=%s stderr=%s",
+            e,
+            (e.stdout or "").strip(),
+            (e.stderr or "").strip(),
+        )
         return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
 
     try:
         supporters_result = subprocess.run(
             ["python3", "../manage_supporters.py", "add", hexpub],
-            cwd=Path(__file__).resolve().parent,
+            cwd=APP_DIR,
             capture_output=True,
             text=True,
             check=True,
@@ -176,7 +182,12 @@ def claim_handle():
             (supporters_result.stderr or "").strip(),
         )
     except subprocess.CalledProcessError as e:
-        logging.error("manage_supporters.py add failed during claim: %s %s", e, e.stderr)
+        logging.error(
+            "manage_supporters.py add failed during claim: %s stdout=%s stderr=%s",
+            e,
+            (e.stdout or "").strip(),
+            (e.stderr or "").strip(),
+        )
         return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
 
     log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
