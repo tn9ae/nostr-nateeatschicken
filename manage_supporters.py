@@ -3,6 +3,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import List
 
 
 FILE_PATH = Path("/opt/nostr/relay/supporters.txt")
@@ -26,14 +27,14 @@ def validate_pubkey(pubkey: str) -> str:
     return pubkey
 
 
-def read_lines() -> list[str]:
+def read_lines() -> List[str]:
     if not FILE_PATH.exists():
         return []
     with FILE_PATH.open("r", encoding="utf-8") as f:
         return f.readlines()
 
 
-def filtered_pubkeys(lines: list[str]) -> list[str]:
+def filtered_pubkeys(lines: List[str]) -> List[str]:
     keys = []
     for line in lines:
         stripped = line.strip()
@@ -43,7 +44,7 @@ def filtered_pubkeys(lines: list[str]) -> list[str]:
     return keys
 
 
-def write_lines(lines: list[str]) -> None:
+def write_lines(lines: List[str]) -> None:
     ensure_parent_dir()
     with FILE_PATH.open("w", encoding="utf-8") as f:
         f.writelines(lines)
@@ -74,7 +75,7 @@ def remove_pubkey(pubkey: str) -> None:
     pubkey_valid = validate_pubkey(pubkey)
     lines = read_lines()
     target = pubkey_valid.lower()
-    kept: list[str] = []
+    kept: List[str] = []
     found = False
 
     for line in lines:
