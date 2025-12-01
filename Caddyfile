@@ -1,5 +1,5 @@
 nostr.nateeatschicken.xyz {
-    root * /opt/nostr/proxy/site
+    root * /srv
 
     @kofi_api {
         path /kofi-webhook /claim-handle
