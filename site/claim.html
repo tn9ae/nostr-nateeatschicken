@@ -107,7 +107,10 @@
 <body>
   <div class="card">
     <h1>Claim your Nostr handle</h1>
-    <p class="helper">Provide your contact info and Nostr details so we can set up your handle.</p>
+    <p class="helper">
+      Flow: tip via <a href="https://ko-fi.com/nateeatschicken">Ko-fi</a>, wait a minute for the Ko-fi webhook to sync,
+      then paste your Nostr npub and choose your handle here.
+    </p>
 
     <label for="email">Email address</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
@@ -253,11 +256,14 @@
       }
     });
 
-    document.getElementById("submit-btn").addEventListener("click", async () => {
+    document.getElementById("submit-btn").addEventListener("click", async (event) => {
+      event.preventDefault();
       const email = document.getElementById("email").value.trim();
       const handle = document.getElementById("handle").value.trim();
+      const npub = document.getElementById("npub").value.trim();
       const hexpub = document.getElementById("hexpub").value.trim();
       const statusEl = document.getElementById("submit-status");
+      const submitBtn = document.getElementById("submit-btn");
       setStatus(statusEl, "");
 
       if (!email || !handle || !hexpub) {
@@ -265,20 +271,33 @@
         return;
       }
 
+      submitBtn.disabled = true;
+
       try {
         const resp = await fetch("/claim-handle", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, handle, hexpub }),
+          body: JSON.stringify({ email, handle, npub, hexpub }),
         });
         const data = await resp.json();
-        if (data.ok) {
-          setStatus(statusEl, data.message || "Submitted successfully.", false);
+        if (data && data.ok) {
+          statusEl.className = "status success";
+          statusEl.innerHTML = `
+            <strong>Handle claimed successfully!</strong><br>
+            Your Nostr identifier is: <strong>${handle}@nostr.nateeatschicken.xyz</strong><br>
+            Next: in your Nostr client (e.g. Amethyst), open your profile and set the NIP-05 / Identifier field to this value and save.
+          `;
         } else {
-          setStatus(statusEl, data.error || "Submission failed.", true);
+          const errMsg = (data && data.error) || "Submission failed.";
+          statusEl.className = "status error";
+          statusEl.textContent = errMsg;
         }
       } catch (err) {
-        setStatus(statusEl, "Network or server error. Please try again.", true);
+        console.error(err);
+        statusEl.className = "status error";
+        statusEl.textContent = "Network or server error. Please try again in a moment.";
+      } finally {
+        submitBtn.disabled = false;
       }
     });
   </script>

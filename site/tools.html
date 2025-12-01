@@ -17,38 +17,95 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      padding: 32px 18px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+      background: rgba(246, 247, 251, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nav-links a {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .nav-links a:hover { background: #eef1fb; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+      white-space: nowrap;
+    }
+    .pill button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 12px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    main { padding: 42px 0 32px; }
+    h1 { margin: 0 0 12px; font-size: 2rem; }
+    p.lead { margin: 0 0 16px; color: var(--muted); line-height: 1.6; }
+    section { margin-bottom: 26px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
     }
     .card {
-      width: 100%;
-      max-width: 780px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
     }
-    h1 {
-      margin: 0 0 16px;
-      font-size: 1.8rem;
-    }
-    ul {
-      margin: 0 0 20px 18px;
-      line-height: 1.7;
-      color: var(--text);
-    }
-    a {
+    .card h3 { margin: 0 0 8px; }
+    .card p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .badge {
+      display: inline-block;
+      background: #eef1fb;
       color: var(--accent);
-      font-weight: 600;
-      text-decoration: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-left: 6px;
     }
-    a:hover { text-decoration: underline; }
     .links {
       margin-top: 16px;
       display: flex;
@@ -73,20 +130,144 @@
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
       background: #e8ecff;
     }
+    footer {
+      text-align: center;
+      padding: 24px 0 34px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Tools & Links</h1>
-    <ul>
-      <li><a href="wss://relay.nateeatschicken.xyz">wss://relay.nateeatschicken.xyz</a> – main relay endpoint.</li>
-      <li><a href="https://ko-fi.com/nateeatschicken/shop" target="_blank" rel="noreferrer">Ko-fi shop</a> – handles and relay power-user tier.</li>
-      <li><a href="https://www.hetzner.com/cloud" target="_blank" rel="noreferrer">Hetzner Cloud</a> – VPS provider used for the relay stack.</li>
-    </ul>
-
-    <div class="links">
-      <a class="btn" href="/index.html">← Back home</a>
+  <header>
+    <div class="container nav">
+      <div class="brand">NateEatsChicken</div>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/support.html">Support / Tips</a>
+        <a href="/tools.html">Tools I Use</a>
+        <a href="/claim.html">Claim handle</a>
+      </nav>
+      <div class="pill">
+        <span id="relay-url">wss://relay.nateeatschicken.xyz</span>
+        <button type="button" data-copy-target="relay-url">Copy</button>
+      </div>
     </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h1>Tools I use</h1>
+      <p class="lead">These are tools I actually use. ★ marks affiliate links that may give me a small benefit if you sign up.</p>
+    </section>
+
+    <section>
+      <h2>Relay &amp; handles</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Nostr relay endpoint</h3>
+          <p>Primary relay at <a href="wss://relay.nateeatschicken.xyz">wss://relay.nateeatschicken.xyz</a> with fair-use limits and moderation.</p>
+        </div>
+        <div class="card">
+          <h3>NIP-05 handles</h3>
+          <p>Handles like <code>@handle@nostr.nateeatschicken.xyz</code> set up via Ko-fi and the <a href="/claim.html">claim page</a>.</p>
+        </div>
+        <div class="card">
+          <h3>Ko-fi tips</h3>
+          <p><a href="https://ko-fi.com/nateeatschicken">Tip on Ko-fi</a> to help cover server costs and unlock power-user perks.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Affiliate picks</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Hetzner Cloud <span class="badge">★</span></h3>
+          <p>I run parts of this infrastructure on Hetzner; using this referral gives me some credit and helps keep servers running.</p>
+          <div class="links" style="margin-top: 10px;">
+            <a class="btn" href="https://hetzner.cloud/?ref=WM5RkbUJIMNj" target="_blank" rel="noreferrer">Visit Hetzner</a>
+          </div>
+        </div>
+        <div class="card">
+          <h3>AiProfit <span class="badge">★</span></h3>
+          <p>UK-focused matched-betting/tools platform I’ve used. Side-profit only, not financial advice—use your own judgement.</p>
+          <div class="links" style="margin-top: 10px;">
+            <a class="btn" href="https://aiprofit.uk/sign-up/?affiliate=MTA2Nw==" target="_blank" rel="noreferrer">Visit AiProfit</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Non-affiliate tools</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Caddy</h3>
+          <p>Reverse proxy handling TLS and routing for the relay and static site.</p>
+        </div>
+        <div class="card">
+          <h3>Docker</h3>
+          <p>Containerized services to keep the relay stack tidy and portable.</p>
+        </div>
+        <div class="card">
+          <h3>Amethyst</h3>
+          <p>My preferred Nostr client when testing handles and relay behavior.</p>
+        </div>
+        <div class="card">
+          <h3>Python</h3>
+          <p>Helper scripts for NIP-05 and supporters management.</p>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    Built with tools I actually use—affiliate picks marked with ★.
+  </footer>
+
+  <script>
+    function copyTextFromId(targetId, button) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const text = el.textContent || "";
+
+      const setCopied = () => {
+        const original = button.textContent;
+        button.textContent = "Copied!";
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = original;
+          button.disabled = false;
+        }, 1500);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(setCopied).catch(() => fallbackCopy(text, setCopied));
+      } else {
+        fallbackCopy(text, setCopied);
+      }
+    }
+
+    function fallbackCopy(text, onDone) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try { document.execCommand("copy"); } catch (e) { console.error(e); }
+      document.body.removeChild(textarea);
+      if (onDone) onDone();
+    }
+
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-copy-target");
+        copyTextFromId(targetId, btn);
+      });
+    });
+  </script>
 </body>
 </html>

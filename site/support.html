@@ -109,23 +109,33 @@
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); background: #e8ecff; }
     .btn.primary:hover { background: #305de0; }
-    .tip-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #fff;
-      overflow: auto;
+    .tip-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      margin-top: 1.5rem;
     }
-    .tip-row code {
+    @media (min-width: 768px) {
+      .tip-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    .tip-card {
+      border-radius: 0.75rem;
+      padding: 1rem;
+      background: #111827;
+      border: 1px solid #374151;
+    }
+    .tip-card code {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      white-space: normal;
+      word-break: break-all;
       font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      color: var(--text);
-      white-space: nowrap;
+      color: #f3f4f6;
     }
-    .tip-row button {
+    .tip-card button {
       border: none;
       background: var(--accent);
       color: #fff;
@@ -133,7 +143,7 @@
       padding: 8px 12px;
       cursor: pointer;
       font-weight: 600;
-      flex-shrink: 0;
+      width: 100%;
     }
     footer {
       text-align: center;
@@ -151,7 +161,7 @@
         <a href="/">Home</a>
         <a href="/support.html">Support / Tips</a>
         <a href="/tools.html">Tools I Use</a>
-        <a href="/claim">Claim handle</a>
+        <a href="/claim.html">Claim handle</a>
       </nav>
       <div class="pill">
         <span id="relay-url">wss://relay.nateeatschicken.xyz</span>
@@ -177,17 +187,19 @@
 
     <section class="card">
       <h2>Tip with crypto / Nostr</h2>
-      <div class="tip-row" style="margin-top: 8px;">
-        <code id="support-lightning">nateeatschicken@blink.sv</code>
-        <button type="button" data-copy-target="support-lightning">Copy</button>
-      </div>
-      <div class="tip-row" style="margin-top: 10px;">
-        <code id="support-btc">bc1pjqzx0qpcxlxk2ah738l3vhn4hcy282fa95wgnelk0n5rnt454ens0ps3ep</code>
-        <button type="button" data-copy-target="support-btc">Copy</button>
-      </div>
-      <div class="tip-row" style="margin-top: 10px;">
-        <code id="support-npub">npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2</code>
-        <button type="button" data-copy-target="support-npub">Copy</button>
+      <div class="tip-grid">
+        <div class="tip-card">
+          <code id="support-lightning">nateeatschicken@blink.sv</code>
+          <button type="button" data-copy-target="support-lightning">Copy</button>
+        </div>
+        <div class="tip-card">
+          <code id="support-btc">bc1pjqzx0qpcxlxk2ah738l3vhn4hcy282fa95wgnelk0n5rnt454ens0ps3ep</code>
+          <button type="button" data-copy-target="support-btc">Copy</button>
+        </div>
+        <div class="tip-card">
+          <code id="support-npub">npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2</code>
+          <button type="button" data-copy-target="support-npub">Copy</button>
+        </div>
       </div>
     </section>
   </main>
