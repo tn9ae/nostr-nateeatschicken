@@ -144,7 +144,7 @@ def claim_handle():
         return jsonify({"ok": False, "error": "No valid Ko-fi order found for this email."}), 403
 
     try:
-        nip05_result = subprocess.run(
+        nip05_res = subprocess.run(
             ["python3", "../manage_nip05.py", "claim", handle, hexpub],
             cwd=APP_DIR,
             capture_output=True,
@@ -155,20 +155,15 @@ def claim_handle():
             "manage_nip05.py claim success: handle=%s hexpub=%s stdout=%s stderr=%s",
             handle,
             hexpub,
-            (nip05_result.stdout or "").strip(),
-            (nip05_result.stderr or "").strip(),
+            nip05_res.stdout,
+            nip05_res.stderr,
         )
     except subprocess.CalledProcessError as e:
-        logging.error(
-            "manage_nip05.py failed during claim: %s stdout=%s stderr=%s",
-            e,
-            (e.stdout or "").strip(),
-            (e.stderr or "").strip(),
-        )
-        return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
+        logging.error("manage_nip05.py claim failed: %s", e, exc_info=True)
+        return jsonify({"ok": False, "error": "Failed to update NIP-05 mapping."}), 500
 
     try:
-        supporters_result = subprocess.run(
+        sup_res = subprocess.run(
             ["python3", "../manage_supporters.py", "add", hexpub],
             cwd=APP_DIR,
             capture_output=True,
@@ -178,17 +173,11 @@ def claim_handle():
         logging.info(
             "manage_supporters.py add success: hexpub=%s stdout=%s stderr=%s",
             hexpub,
-            (supporters_result.stdout or "").strip(),
-            (supporters_result.stderr or "").strip(),
+            sup_res.stdout,
+            sup_res.stderr,
         )
     except subprocess.CalledProcessError as e:
-        logging.error(
-            "manage_supporters.py add failed during claim: %s stdout=%s stderr=%s",
-            e,
-            (e.stdout or "").strip(),
-            (e.stderr or "").strip(),
-        )
-        return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
+        logging.error("manage_supporters.py add failed during claim: %s", e, exc_info=True)
 
     log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
     try:
