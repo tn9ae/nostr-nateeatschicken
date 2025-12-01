@@ -170,6 +170,42 @@
       font-weight: 600;
       flex-shrink: 0;
     }
+    .tip-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .tip-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    .tip-card {
+      border-radius: 0.75rem;
+      padding: 1rem;
+      background: #111827;
+      border: 1px solid #374151;
+    }
+    .tip-card code {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      white-space: normal;
+      word-break: break-all;
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: #f3f4f6;
+    }
+    .tip-card button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+    }
     footer {
       text-align: center;
       padding: 28px 0 38px;
@@ -186,7 +222,7 @@
         <a href="/">Home</a>
         <a href="/support.html">Support / Tips</a>
         <a href="/tools.html">Tools I Use</a>
-        <a href="/claim">Claim handle</a>
+        <a href="/claim.html">Claim handle</a>
       </nav>
       <div class="pill">
         <span id="relay-url">wss://relay.nateeatschicken.xyz</span>
@@ -205,7 +241,7 @@
       </p>
       <div class="hero-actions">
         <a class="btn primary" href="https://ko-fi.com/nateeatschicken">Tip &amp; get a handle on Ko-fi</a>
-        <a class="btn" href="/claim">Already tipped? Claim your handle</a>
+        <a class="btn" href="/claim.html">Already tipped? Claim your handle</a>
       </div>
     </section>
 
@@ -235,8 +271,11 @@
           <p class="lead">Choose a handle tip in the Ko-fi shop.</p>
         </div>
         <div class="step">
-          <strong>2) Claim at /claim</strong>
-          <p class="lead">Submit your email, handle, and npub to link everything up.</p>
+          <strong>2) Connect your handle</strong>
+          <p class="lead">
+            After you tip on Ko-fi, go to the <a href="/claim.html">claim page</a> to connect your Nostr npub and pick your
+            <code>@handle@nostr.nateeatschicken.xyz</code>.
+          </p>
         </div>
         <div class="step">
           <strong>3) Set NIP-05 in your client</strong>
@@ -250,16 +289,16 @@
       <div class="hero-actions" style="justify-content: flex-start;">
         <a class="btn primary" href="https://ko-fi.com/nateeatschicken">Ko-fi</a>
       </div>
-      <div class="cards" style="margin-top: 12px;">
-        <div class="tip-row">
+      <div class="tip-grid">
+        <div class="tip-card">
           <code id="lightning-address">nateeatschicken@blink.sv</code>
           <button type="button" data-copy-target="lightning-address">Copy</button>
         </div>
-        <div class="tip-row">
+        <div class="tip-card">
           <code id="btc-address">bc1pjqzx0qpcxlxk2ah738l3vhn4hcy282fa95wgnelk0n5rnt454ens0ps3ep</code>
           <button type="button" data-copy-target="btc-address">Copy</button>
         </div>
-        <div class="tip-row">
+        <div class="tip-card">
           <code id="npub-address">npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2</code>
           <button type="button" data-copy-target="npub-address">Copy</button>
         </div>
