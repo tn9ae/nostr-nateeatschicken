@@ -139,7 +139,8 @@ def claim_handle():
     if not re.fullmatch(r"[a-zA-Z0-9_.-]+", handle):
         return jsonify({"ok": False, "error": "Handle is required and must be alphanumeric with ._-"}), 400
 
-    if not has_valid_shop_order(email):
+    has_order = has_valid_shop_order(email)
+    if not has_order:
         logging.warning("No valid Ko-fi Shop Order found for email=%s", email)
         return jsonify({"ok": False, "error": "No valid Ko-fi order found for this email."}), 403
 
@@ -163,7 +164,7 @@ def claim_handle():
         return jsonify({"ok": False, "error": "Failed to update NIP-05 mapping."}), 500
 
     try:
-        sup_res = subprocess.run(
+        supporters_res = subprocess.run(
             ["python3", "../manage_supporters.py", "add", hexpub],
             cwd=APP_DIR,
             capture_output=True,
@@ -173,11 +174,13 @@ def claim_handle():
         logging.info(
             "manage_supporters.py add success: hexpub=%s stdout=%s stderr=%s",
             hexpub,
-            sup_res.stdout,
-            sup_res.stderr,
+            supporters_res.stdout,
+            supporters_res.stderr,
         )
     except subprocess.CalledProcessError as e:
-        logging.error("manage_supporters.py add failed during claim: %s", e, exc_info=True)
+        logging.error(
+            "manage_supporters.py add failed during claim: %s", e, exc_info=True
+        )
 
     log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
     try:
