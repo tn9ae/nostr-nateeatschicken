@@ -124,33 +124,28 @@ def has_valid_shop_order(email: str) -> bool:
 
 @app.route("/claim-handle", methods=["POST"])
 def claim_handle():
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify({"ok": False, "error": "Invalid JSON body."}), 400
-
-    email = (payload.get("email") or "").strip()
-    handle = (payload.get("handle") or "").strip().lower()
-    hexpub = (payload.get("hexpub") or "").strip().lower()
+    # Parse JSON body
+    payload = request.get_json(silent=True) or {}
+    email = (payload.get("email") or "").strip().lower()
+    handle = (payload.get("handle") or "").strip()
+    hexpub = (payload.get("hexpub") or "").strip()
 
     if not email or not handle or not hexpub:
-        return jsonify({"ok": False, "error": "Missing email/handle/hexpub"}), 400
-    if not re.fullmatch(r"[0-9a-f]{64}", hexpub):
-        return jsonify({"ok": False, "error": "Invalid hex pubkey"}), 400
-    if not re.fullmatch(r"[a-zA-Z0-9_.-]+", handle):
-        return jsonify({"ok": False, "error": "Handle is required and must be alphanumeric with ._-"}), 400
+        return jsonify({"ok": False, "error": "Missing email, handle, or hexpub."}), 400
 
+    # 1) Verify Ko-fi order for this email
     has_order = has_valid_shop_order(email)
     if not has_order:
-        logging.warning("No valid Ko-fi Shop Order found for email=%s", email)
         return jsonify({"ok": False, "error": "No valid Ko-fi order found for this email."}), 403
 
+    # 2) Update NIP-05 mapping (required)
     try:
         nip05_res = subprocess.run(
             ["python3", "../manage_nip05.py", "claim", handle, hexpub],
             cwd=APP_DIR,
+            check=True,
             capture_output=True,
             text=True,
-            check=True,
         )
         logging.info(
             "manage_nip05.py claim success: handle=%s hexpub=%s stdout=%s stderr=%s",
@@ -163,13 +158,14 @@ def claim_handle():
         logging.error("manage_nip05.py claim failed: %s", e, exc_info=True)
         return jsonify({"ok": False, "error": "Failed to update NIP-05 mapping."}), 500
 
+    # 3) Best-effort supporters.txt update (non-fatal on error)
     try:
         supporters_res = subprocess.run(
             ["python3", "../manage_supporters.py", "add", hexpub],
             cwd=APP_DIR,
+            check=True,
             capture_output=True,
             text=True,
-            check=True,
         )
         logging.info(
             "manage_supporters.py add success: hexpub=%s stdout=%s stderr=%s",
@@ -181,6 +177,7 @@ def claim_handle():
         logging.error(
             "manage_supporters.py add failed during claim: %s", e, exc_info=True
         )
+        # DO NOT return error to client; handle already created.
 
     log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
     try:
