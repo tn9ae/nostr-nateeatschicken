@@ -17,114 +17,302 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      padding: 32px 18px;
     }
-    .card {
+    a { color: inherit; text-decoration: none; }
+    .container {
       width: 100%;
-      max-width: 780px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 18px;
     }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 1.9rem;
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+      background: rgba(246, 247, 251, 0.8);
+      border-bottom: 1px solid var(--border);
     }
-    p.lead {
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.5;
-    }
-    ul {
-      margin: 0 0 20px 18px;
-      color: var(--text);
-      line-height: 1.6;
-    }
-    .actions {
+    .nav {
       display: flex;
-      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
       gap: 12px;
-      margin: 16px 0 22px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nav-links a {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .nav-links a:hover { background: #eef1fb; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+      white-space: nowrap;
+    }
+    .pill button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 12px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .hero {
+      padding: 64px 0 32px;
+      text-align: center;
+    }
+    .hero h1 { margin: 0 0 10px; font-size: 2.3rem; }
+    .hero p { margin: 0 auto 18px; color: var(--muted); max-width: 720px; line-height: 1.6; }
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
     }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 12px 16px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: #f1f4ff;
       color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
     .btn.primary {
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
-      box-shadow: 0 10px 20px rgba(58, 111, 247, 0.2);
+      box-shadow: 0 10px 24px rgba(58, 111, 247, 0.2);
     }
     .btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
       background: #e8ecff;
     }
-    .btn.primary:hover {
-      background: #305de0;
-      box-shadow: 0 14px 28px rgba(58, 111, 247, 0.25);
-    }
-    .links {
+    .btn.primary:hover { background: #305de0; }
+    section { padding: 28px 0; }
+    h2 { margin: 0 0 12px; font-size: 1.6rem; }
+    p.lead { color: var(--muted); margin: 0 0 16px; line-height: 1.6; }
+    .cards {
       display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+    }
+    .card h3 { margin: 0 0 8px; }
+    .card p { margin: 0; color: var(--muted); line-height: 1.55; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .step { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .step strong { display: inline-block; margin-bottom: 6px; }
+    .tip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 10px;
-      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      overflow: auto;
     }
-    .links a {
-      color: var(--accent);
-      text-decoration: none;
+    .tip-row code {
+      font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .tip-row button {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
       font-weight: 600;
+      flex-shrink: 0;
     }
-    .links a:hover { text-decoration: underline; }
+    footer {
+      text-align: center;
+      padding: 28px 0 38px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 <body>
-  <main class="card">
-    <p class="lead" style="text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--accent); margin-bottom: 8px;">Nostr.nateeatschicken.xyz</p>
-    <h1>Nostr for humans, not just crypto nerds</h1>
-    <p class="lead">
-      Self-hosted relay and NIP-05 handles run by NateEatsChicken. Easy onboarding, spam protection,
-      and options for power users who need more throughput.
-    </p>
-
-    <ul>
-      <li>Free relay access with sensible limits and moderation.</li>
-      <li>Power-user relay tier for whitelisted keys and higher limits.</li>
-      <li>NIP-05 handles like <strong>name@nostr.nateeatschicken.xyz</strong> handled via Ko-fi.</li>
-    </ul>
-
-    <div class="actions">
-      <a class="btn primary" href="https://ko-fi.com/nateeatschicken/shop">Support via Ko-fi (get a handle)</a>
-      <a class="btn" href="/support.html">Support &amp; pricing</a>
-      <a class="btn" href="/tools.html">Tools &amp; links</a>
-    </div>
-
-    <div>
-      <h2 style="margin: 0 0 10px; font-size: 1.2rem;">Connect</h2>
-      <div class="links">
-        <a href="https://www.tiktok.com/@nateeatschicken" target="_blank" rel="noreferrer">TikTok @nateeatschicken</a>
-        <a href="https://twitter.com/nateeatschicken" target="_blank" rel="noreferrer">X / Twitter @nateeatschicken</a>
-        <a href="nostr:npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2">Nostr npub (nostr: link)</a>
+  <header>
+    <div class="container nav">
+      <div class="brand">NateEatsChicken</div>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/support.html">Support / Tips</a>
+        <a href="/tools.html">Tools I Use</a>
+        <a href="/claim">Claim handle</a>
+      </nav>
+      <div class="pill">
+        <span id="relay-url">wss://relay.nateeatschicken.xyz</span>
+        <button type="button" data-copy-target="relay-url">Copy</button>
       </div>
     </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="lead" style="text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--accent); margin-bottom: 8px;">Nostr.nateeatschicken.xyz</p>
+      <h1>NateEatsChicken on Nostr</h1>
+      <p>
+        A human-run Nostr relay and NIP-05 handle service. Non-crypto-maxi, friendly, and unapologetically chicken-themed.
+        Better onboarding, spam protection, and easy handles for real people.
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" href="https://ko-fi.com/nateeatschicken">Tip &amp; get a handle on Ko-fi</a>
+        <a class="btn" href="/claim">Already tipped? Claim your handle</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>What you get</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Friendly Nostr relay</h3>
+          <p>Open access with fair-use limits, spam protection, and moderation so good conversations don’t get drowned out.</p>
+        </div>
+        <div class="card">
+          <h3>Power-user perks</h3>
+          <p>Ko-fi supporters can get whitelisted keys, better limits, and priority throughput to keep your feed flowing.</p>
+        </div>
+        <div class="card">
+          <h3>Run by an actual person</h3>
+          <p>Not a faceless service. If something breaks, I’m here to fix it and keep the chickens happy.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <strong>1) Tip on Ko-fi</strong>
+          <p class="lead">Choose a handle tip in the Ko-fi shop.</p>
+        </div>
+        <div class="step">
+          <strong>2) Claim at /claim</strong>
+          <p class="lead">Submit your email, handle, and npub to link everything up.</p>
+        </div>
+        <div class="step">
+          <strong>3) Set NIP-05 in your client</strong>
+          <p class="lead">In your Nostr app (e.g. Amethyst), set your NIP-05/Identifier to your new handle and save.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tip links</h2>
+      <div class="hero-actions" style="justify-content: flex-start;">
+        <a class="btn primary" href="https://ko-fi.com/nateeatschicken">Ko-fi</a>
+      </div>
+      <div class="cards" style="margin-top: 12px;">
+        <div class="tip-row">
+          <code id="lightning-address">nateeatschicken@blink.sv</code>
+          <button type="button" data-copy-target="lightning-address">Copy</button>
+        </div>
+        <div class="tip-row">
+          <code id="btc-address">bc1pjqzx0qpcxlxk2ah738l3vhn4hcy282fa95wgnelk0n5rnt454ens0ps3ep</code>
+          <button type="button" data-copy-target="btc-address">Copy</button>
+        </div>
+        <div class="tip-row">
+          <code id="npub-address">npub1ky4kmy9hhfak63pjkfetzzjfs0fza0dwthhan2k0u4x3tzs0m5xsh9mgd2</code>
+          <button type="button" data-copy-target="npub-address">Copy</button>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    Built with coffee, chicken energy, and real human support.
+  </footer>
+
+  <script>
+    function copyTextFromId(targetId, button) {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const text = el.textContent || "";
+
+      const setCopied = () => {
+        const original = button.textContent;
+        button.textContent = "Copied!";
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = original;
+          button.disabled = false;
+        }, 1500);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(setCopied).catch(() => fallbackCopy(text, setCopied));
+      } else {
+        fallbackCopy(text, setCopied);
+      }
+    }
+
+    function fallbackCopy(text, onDone) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try { document.execCommand("copy"); } catch (e) { console.error(e); }
+      document.body.removeChild(textarea);
+      if (onDone) onDone();
+    }
+
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-copy-target");
+        copyTextFromId(targetId, btn);
+      });
+    });
+  </script>
 </body>
 </html>
