@@ -131,46 +131,53 @@ def claim_handle():
     handle = (payload.get("handle") or "").strip().lower()
     hexpub = (payload.get("hexpub") or "").strip().lower()
 
-    if not email:
-        return jsonify({"ok": False, "error": "Email is required."}), 400
-    if not handle or not re.fullmatch(r"[a-zA-Z0-9_.-]+", handle):
+    if not email or not handle or not hexpub:
+        return jsonify({"ok": False, "error": "Missing email/handle/hexpub"}), 400
+    if not re.fullmatch(r"[0-9a-f]{64}", hexpub):
+        return jsonify({"ok": False, "error": "Invalid hex pubkey"}), 400
+    if not re.fullmatch(r"[a-zA-Z0-9_.-]+", handle):
         return jsonify({"ok": False, "error": "Handle is required and must be alphanumeric with ._-"}), 400
-    if not hexpub or not re.fullmatch(r"[0-9a-fA-F]{64}", hexpub):
-        return jsonify({"ok": False, "error": "Hex pubkey must be 64 hexadecimal characters."}), 400
 
     if not has_valid_shop_order(email):
         logging.warning("No valid Ko-fi Shop Order found for email=%s", email)
         return jsonify({"ok": False, "error": "No valid Ko-fi order found for this email."}), 403
 
     try:
-        result = subprocess.run(
-            ["python3", "manage_nip05.py", "add", "--name", handle, "--pubkey", hexpub],
-            cwd=REPO_ROOT,
+        nip05_result = subprocess.run(
+            ["python3", "../manage_nip05.py", "claim", handle, hexpub],
+            cwd=Path(__file__).resolve().parent,
             capture_output=True,
             text=True,
             check=True,
         )
         logging.info(
-            "manage_nip05.py claim success: handle=%s hexpub=%s stdout=%s",
+            "manage_nip05.py claim success: handle=%s hexpub=%s stdout=%s stderr=%s",
             handle,
             hexpub,
-            (result.stdout or "").strip(),
+            (nip05_result.stdout or "").strip(),
+            (nip05_result.stderr or "").strip(),
         )
     except subprocess.CalledProcessError as e:
         logging.error("manage_nip05.py failed during claim: %s %s", e, e.stderr)
         return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
 
-    # Optional: also add to supporters list.
-    # try:
-    #     subprocess.run(
-    #         ["python3", "manage_supporters.py", "add", "--pubkey", hexpub],
-    #         cwd=REPO_ROOT,
-    #         capture_output=True,
-    #         text=True,
-    #         check=True,
-    #     )
-    # except subprocess.CalledProcessError as e:
-    #     logging.warning("manage_supporters.py add failed during claim: %s %s", e, e.stderr)
+    try:
+        supporters_result = subprocess.run(
+            ["python3", "../manage_supporters.py", "add", hexpub],
+            cwd=Path(__file__).resolve().parent,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        logging.info(
+            "manage_supporters.py add success: hexpub=%s stdout=%s stderr=%s",
+            hexpub,
+            (supporters_result.stdout or "").strip(),
+            (supporters_result.stderr or "").strip(),
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error("manage_supporters.py add failed during claim: %s %s", e, e.stderr)
+        return jsonify({"ok": False, "error": "Internal error creating handle."}), 500
 
     log_entry = {"claim": True, "email": email, "handle": handle, "hexpub": hexpub}
     try:
@@ -180,7 +187,7 @@ def claim_handle():
     except Exception as e:
         logging.error("Failed to record claim in %s: %s", KOFI_LOG, e)
 
-    return jsonify({"ok": True, "message": "Handle created. It may take a minute to propagate."}), 200
+    return jsonify({"ok": True, "handle": handle, "hexpub": hexpub}), 200
 
 
 @app.route("/kofi-webhook", methods=["POST"])
